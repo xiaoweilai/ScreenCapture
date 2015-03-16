@@ -155,6 +155,5 @@ int main(int argc, char *argv[])
                 exit(1);
     }
 */
-    fprintf(stdout,"w:%d h:%d\n", w, h);
     return a.exec();
 }

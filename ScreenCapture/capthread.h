@@ -34,10 +34,13 @@ private:
 public:
     explicit CapThread(int width, int height, QObject *parent = 0);
     
+private:
+    void run();
 signals:
     
 public slots:
     void capFrame();
+//    void setImagePixel(const QPoint &pos, bool opaque);
     
 };
 

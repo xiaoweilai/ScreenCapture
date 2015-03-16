@@ -18,15 +18,67 @@ extern "C"
 #include <stdio.h>
 #include <math.h>
 
+#include <QDebug>
+#include <QPixmap>
+#include <QPainter>
+///*
+//*设置一个像素
+//*/
+//void CapThread::setImagePixel(const QPoint &pos, bool opaque)
+//{
+//    int i,j;
+//    //将窗口部件的左边转换到图像的坐标上面，部件的位置除以缩放因子则得到原始的图像位置。
+//    i=pos.x()/this->zoom;
+//    j=pos.y()/this->zoom;
+//    if(this->image.rect().contains(i,j)){//这个点是否属于图像的正确范围
+//        if(opaque){
+//            this->image.setPixel(i,j,penColor().rgba());
+//        }else{
+//            this->image.setPixel(i,j,qRgba(0,0,0,0));
+//        }
+//        update(pixelRect(i,j));
+//    }
+//}
 
 void CapThread::capFrame()
 {
     QImage image = QPixmap::grabWindow(QApplication::desktop()->winId()).toImage();
-    image = image.scaled(QSize(resize_width, resize_height));
+//    image = image.scaled(QSize(resize_width, resize_height));
 
-    printf("resize_width:%d,resize_height:%d\n",
-           resize_width,
-           resize_height);
+//    printf("resize_width:%d,resize_height:%d\n",
+//           resize_width,
+//           resize_height);
+    QCursor cusr;
+////    QPoint curpos = QCursor::pos();
+////    QCursor.shape();
+//    qDebug() <<"cursor pos:"<<cusr.pos().x()<<","<<cusr.pos().y();
+//    QImage cursorimage = cusr.pixmap().toImage();
+
+
+
+//    image.setPixel(curpos,QCursor.pixmap().);
+    int x = cusr.pos().x();
+    int y = cusr.pos().y();
+    image.setPixel(x,y,qRgba(255,255,255,255));
+    image.setPixel(x+1,y,qRgba(255,255,255,255));
+    image.setPixel(x,y+1,qRgba(255,255,255,255));
+    image.setPixel(x,y-1,qRgba(255,255,255,255));
+
+////    image.set;
+//    QPainter painter(&image);
+//    painter.drawImage(cusr.pos(),cursorimage);
+////    int w = QCursor.pixmap().width();
+////    int h = QCursor.pixmap().height();
+////    painter.drawPixmap(cusr.pos().x(),curpos.y,w,h,QCursor.pixmap());
+
+////    QImage resultImage = image;
+////    QPainter painter(&resultImage);
+////    painter.setCompositionMode(QPainter::CompositionMode_Xor);
+////    painter.drawImage(curpos, butterflyImage);
+
+
+
+
     av_init_packet(pkt);
     pkt->data = NULL;    // packet data will be allocated by the encoder
     pkt->size = 0;
@@ -162,8 +214,21 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
         exit(1);
     }
 
+//#if 1
+//    timer = new QTimer(this);
+//    connect(timer, SIGNAL(timeout()), this, SLOT(capFrame()));
+//    timer->start(10);
+//#else
+//    while(1){
+//        capFrame();
+//    }
 
-    timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(capFrame()));
-    timer->start(5);
+//#endif
+}
+
+void CapThread::run()
+{
+    while(1){
+        capFrame();
+    }
 }
