@@ -24,6 +24,9 @@ void CapThread::capFrame()
     QImage image = QPixmap::grabWindow(QApplication::desktop()->winId()).toImage();
     image = image.scaled(QSize(resize_width, resize_height));
 
+    printf("resize_width:%d,resize_height:%d\n",
+           resize_width,
+           resize_height);
     av_init_packet(pkt);
     pkt->data = NULL;    // packet data will be allocated by the encoder
     pkt->size = 0;
@@ -92,7 +95,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     i = 0;
 
 
-    codec = avcodec_find_encoder(AV_CODEC_ID_MPEG1VIDEO);
+    codec = avcodec_find_encoder(AV_CODEC_ID_H264);
 
     if (codec == 0)
     {
@@ -119,14 +122,15 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
         exit(1);
     }
 
-    //c->bit_rate = 400000;
+//    c->bit_rate = 400000;
     c->width = width;
     c->height = height;
     c->time_base = (AVRational){1, 25};
     c->gop_size = 20;
     c->max_b_frames = 1;
     c->pix_fmt = AV_PIX_FMT_YUV420P;
-    //c->pix_fmt = AV_PIX_FMT_RGB24;
+//    c->pix_fmt = AV_PIX_FMT_RGB24;
+//    c->pix_fmt = AV_PIX_FMT_ARGB;
 
     int re = avcodec_open2(c, codec, NULL);
     if (re < 0)
@@ -161,5 +165,5 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
 
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(capFrame()));
-    timer->start(40);
+    timer->start(5);
 }

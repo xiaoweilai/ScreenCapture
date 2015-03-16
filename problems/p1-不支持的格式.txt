@@ -1,0 +1,13 @@
+Qt: Untested Windows version 6.2 detected!
+w:1366 h:768
+[mpeg1video @ 02951860] Specified pixel format yuyv422 is invalid or not supported
+open codec failed
+w:1366 h:768
+resize_width:1366,resize_height:768
+
+    c->max_b_frames = 1;
+//    c->pix_fmt = AV_PIX_FMT_YUV420P;
+//    c->pix_fmt = AV_PIX_FMT_RGB24;
+    c->pix_fmt = AV_PIX_FMT_YUYV422;
+
+此格式不支持，直接挂掉  AV_PIX_FMT_YUYV422;

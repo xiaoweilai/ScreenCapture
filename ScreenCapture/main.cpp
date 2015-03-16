@@ -14,6 +14,11 @@ extern "C"
 #define AUDIO_INBUF_SIZE 20480
 #define AUDIO_REFILL_THRESH 4096
 
+
+//#define ORGSRC
+#define DESK_WIDTH  (1366)
+#define DESK_HEIGHT (768)
+
 #include "capthread.h"
 #include <stdio.h>
 #include <math.h>
@@ -88,9 +93,13 @@ static int decode_write_frame(AVCodecContext *avctx, AVFrame *frame, int *frame_
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-
+#ifdef ORGSRC
     int w = QString(argv[1]).toInt();
     int h = QString(argv[2]).toInt();
+#else
+    int w = DESK_WIDTH;
+    int h = DESK_HEIGHT;
+#endif
     printf("w:%d h:%d\n", w, h);
     CapThread* th = new CapThread(w, h);
     th->start();
@@ -146,6 +155,6 @@ int main(int argc, char *argv[])
                 exit(1);
     }
 */
-
+    fprintf(stdout,"w:%d h:%d\n", w, h);
     return a.exec();
 }
