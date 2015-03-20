@@ -62,7 +62,11 @@ void CapThread::capFrame()
     image.setPixel(x,y,qRgba(255,255,255,255));
     image.setPixel(x+1,y,qRgba(255,255,255,255));
     image.setPixel(x,y+1,qRgba(255,255,255,255));
-    image.setPixel(x,y-1,qRgba(255,255,255,255));
+    image.setPixel(x,y+2,qRgba(255,255,255,255));
+    image.setPixel(x,y+3,qRgba(255,255,255,255));
+    image.setPixel(x,y+4,qRgba(255,255,255,255));
+    image.setPixel(x,y+5,qRgba(255,255,255,255));
+    image.setPixel(x,y+6,qRgba(255,255,255,255));
 
 ////    image.set;
 //    QPainter painter(&image);
@@ -183,6 +187,9 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     c->pix_fmt = AV_PIX_FMT_YUV420P;
 //    c->pix_fmt = AV_PIX_FMT_RGB24;
 //    c->pix_fmt = AV_PIX_FMT_ARGB;
+    /* frames per second */
+    c->time_base.den = 10;
+    c->time_base.num = 1;
 
     int re = avcodec_open2(c, codec, NULL);
     if (re < 0)
