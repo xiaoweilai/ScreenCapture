@@ -21,6 +21,12 @@ extern "C"
 #include <QDebug>
 #include <QPixmap>
 #include <QPainter>
+#include <QCursor>
+#include <QtCore>
+#include <windows.h>
+#include <winuser.h>
+#include <QWidget>
+
 ///*
 //*ÉèÖÃÒ»¸öÏñËØ
 //*/
@@ -43,42 +49,45 @@ extern "C"
 void CapThread::capFrame()
 {
     QImage image = QPixmap::grabWindow(QApplication::desktop()->winId()).toImage();
-//    image = image.scaled(QSize(resize_width, resize_height));
+    //    image = image.scaled(QSize(resize_width, resize_height));
 
-//    printf("resize_width:%d,resize_height:%d\n",
-//           resize_width,
-//           resize_height);
-    QCursor cusr;
-////    QPoint curpos = QCursor::pos();
-////    QCursor.shape();
-//    qDebug() <<"cursor pos:"<<cusr.pos().x()<<","<<cusr.pos().y();
-//    QImage cursorimage = cusr.pixmap().toImage();
+    //    printf("resize_width:%d,resize_height:%d\n",
+    //           resize_width,
+    //           resize_height);
+    QCursor curCsor;
+    updateMouseShape(curCsor.pos(),curCsor.shape());
+    ////    QPoint curpos = QCursor::pos();
+    ////    QCursor.shape();
+    //    qDebug() <<"cursor pos:"<<cusr.pos().x()<<","<<cusr.pos().y();
+    //    QImage cursorimage = cusr.pixmap().toImage();
 
 
 
-//    image.setPixel(curpos,QCursor.pixmap().);
-    int x = cusr.pos().x();
-    int y = cusr.pos().y();
-    image.setPixel(x,y,qRgba(255,255,255,255));
-    image.setPixel(x+1,y,qRgba(255,255,255,255));
-    image.setPixel(x,y+1,qRgba(255,255,255,255));
-    image.setPixel(x,y+2,qRgba(255,255,255,255));
-    image.setPixel(x,y+3,qRgba(255,255,255,255));
-    image.setPixel(x,y+4,qRgba(255,255,255,255));
-    image.setPixel(x,y+5,qRgba(255,255,255,255));
-    image.setPixel(x,y+6,qRgba(255,255,255,255));
+    //    image.setPixel(curpos,QCursor.pixmap().);
+    //    int x = cusr.pos().x();
+    //    int y = cusr.pos().y();
+    //    image.setPixel(x,y,qRgba(255,255,255,255));
+    //    image.setPixel(x+1,y,qRgba(255,255,255,255));
+    //    image.setPixel(x,y+1,qRgba(255,255,255,255));
+    //    image.setPixel(x,y+2,qRgba(255,255,255,255));
+    //    image.setPixel(x,y+3,qRgba(255,255,255,255));
+    //    image.setPixel(x,y+4,qRgba(255,255,255,255));
+    //    image.setPixel(x,y+5,qRgba(255,255,255,255));
+    //    image.setPixel(x,y+6,qRgba(255,255,255,255));
+    //    curCsor.shape();
 
-////    image.set;
-//    QPainter painter(&image);
-//    painter.drawImage(cusr.pos(),cursorimage);
-////    int w = QCursor.pixmap().width();
-////    int h = QCursor.pixmap().height();
-////    painter.drawPixmap(cusr.pos().x(),curpos.y,w,h,QCursor.pixmap());
 
-////    QImage resultImage = image;
-////    QPainter painter(&resultImage);
-////    painter.setCompositionMode(QPainter::CompositionMode_Xor);
-////    painter.drawImage(curpos, butterflyImage);
+    ////    image.set;
+    //    QPainter painter(&image);
+    //    painter.drawImage(cusr.pos(),cursorimage);
+    ////    int w = QCursor.pixmap().width();
+    ////    int h = QCursor.pixmap().height();
+    ////    painter.drawPixmap(cusr.pos().x(),curpos.y,w,h,QCursor.pixmap());
+
+    ////    QImage resultImage = image;
+    ////    QPainter painter(&resultImage);
+    ////    painter.setCompositionMode(QPainter::CompositionMode_Xor);
+    ////    painter.drawImage(curpos, butterflyImage);
 
 
 
@@ -158,7 +167,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
         printf("find encoder failed\n");
         exit(1);
     }
-/*
+    /*
     const AVRational* sup = codec->supported_framerates;
     int k = 0;
     while(true)
@@ -178,48 +187,48 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
         exit(1);
     }
 
-//    c->bit_rate = 400000;
+    //    c->bit_rate = 400000;
     c->width = width;
     c->height = height;
     c->time_base = (AVRational){1, 25};
-    c->gop_size = 20;
-    c->max_b_frames = 1;
-    c->pix_fmt = AV_PIX_FMT_YUV420P;
+c->gop_size = 20;
+c->max_b_frames = 1;
+c->pix_fmt = AV_PIX_FMT_YUV420P;
 //    c->pix_fmt = AV_PIX_FMT_RGB24;
 //    c->pix_fmt = AV_PIX_FMT_ARGB;
-    /* frames per second */
-    c->time_base.den = 10;
-    c->time_base.num = 1;
+/* frames per second */
+c->time_base.den = 10;
+c->time_base.num = 1;
 
-    int re = avcodec_open2(c, codec, NULL);
-    if (re < 0)
-    {
-        printf("open codec failed\n");
-        exit(1);
-    }
-    f = fopen("test.mpg", "wb");
-    if (!f)
-    {
-        printf("open output file failed\n");
-        exit(1);
-    }
-    frame = av_frame_alloc();
-    if (!frame)
-    {
-        printf("Could not allocate video frame\n");
-        exit(1);
-    }
-    frame->format = c->pix_fmt;
-    frame->width  = c->width;
-    frame->height = c->height;
-    /* the image can be allocated by any means and av_image_alloc() is
+int re = avcodec_open2(c, codec, NULL);
+if (re < 0)
+{
+    printf("open codec failed\n");
+    exit(1);
+}
+f = fopen("test.mpg", "wb");
+if (!f)
+{
+    printf("open output file failed\n");
+    exit(1);
+}
+frame = av_frame_alloc();
+if (!frame)
+{
+    printf("Could not allocate video frame\n");
+    exit(1);
+}
+frame->format = c->pix_fmt;
+frame->width  = c->width;
+frame->height = c->height;
+/* the image can be allocated by any means and av_image_alloc() is
      * just the most convenient way if av_malloc() is to be used */
-    ret = av_image_alloc(frame->data, frame->linesize, c->width, c->height, c->pix_fmt, 32);
-    if (ret < 0)
-    {
-        printf("Could not allocate raw picture buffer\n");
-        exit(1);
-    }
+ret = av_image_alloc(frame->data, frame->linesize, c->width, c->height, c->pix_fmt, 32);
+if (ret < 0)
+{
+    printf("Could not allocate raw picture buffer\n");
+    exit(1);
+}
 
 //#if 1
 //    timer = new QTimer(this);
@@ -237,5 +246,44 @@ void CapThread::run()
 {
     while(1){
         capFrame();
+    }
+}
+
+
+void CapThread::updateMouseShape(const QPoint point,Qt::CursorShape shape)
+{
+    switch(shape)
+    {
+
+    case Qt::ArrowCursor:
+    case Qt::UpArrowCursor:
+    case Qt::CrossCursor:
+    case Qt::WaitCursor:
+    case Qt::IBeamCursor:
+    case Qt::SizeVerCursor:
+    case Qt::SizeHorCursor:
+    case Qt::SizeBDiagCursor:
+    case Qt::SizeFDiagCursor:
+    case Qt::SizeAllCursor:
+    case Qt::BlankCursor:
+    case Qt::SplitVCursor:
+    case Qt::SplitHCursor:
+    case Qt::PointingHandCursor:
+    case Qt::ForbiddenCursor:
+    case Qt::WhatsThisCursor:
+    case Qt::BusyCursor:
+    case Qt::OpenHandCursor:
+    case Qt::ClosedHandCursor:
+    case Qt::DragCopyCursor:
+    case Qt::DragMoveCursor:
+    case Qt::DragLinkCursor:
+    case Qt::BitmapCursor:
+    case Qt::CustomCursor:
+        setCursor(Qt::ArrowCursor);
+        break;
+    default:
+        setCursor(Qt::ArrowCursor);
+
+        break;
     }
 }

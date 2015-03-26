@@ -36,6 +36,7 @@ public:
     
 private:
     void run();
+    void updateMouseShape(const QPoint point, Qt::CursorShape shape);
 signals:
     
 public slots:
