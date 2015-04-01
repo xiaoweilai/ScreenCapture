@@ -26,7 +26,8 @@ extern "C"
 
 #include <QtCore/QCoreApplication>
 #include <QApplication>
-
+#include <QWidget>
+#include <QDesktopWidget>
 #include "capthread.h"
 
 
@@ -96,11 +97,15 @@ int main(int argc, char *argv[])
 #ifdef ORGSRC
     int w = QString(argv[1]).toInt();
     int h = QString(argv[2]).toInt();
-#else
+#elif 0
     int w = DESK_WIDTH;
     int h = DESK_HEIGHT;
+#else
+    int w = QApplication::desktop()->width();
+    int h = QApplication::desktop()->height();
 #endif
-    printf("w:%d h:%d\n", w, h);
+
+    printf("screen rect,w:%d h:%d\n", w, h);
     CapThread* th = new CapThread(w, h);
     th->start();
 /*

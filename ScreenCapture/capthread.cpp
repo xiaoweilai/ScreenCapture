@@ -23,9 +23,10 @@ extern "C"
 #include <QPainter>
 #include <QCursor>
 #include <QtCore>
-#include <windows.h>
-#include <winuser.h>
+//#include <windows.h>
+//#include <winuser.h>
 #include <QWidget>
+#include <QGraphicsItem>
 
 ///*
 //*设置一个像素
@@ -127,7 +128,14 @@ void CapThread::capFrame()
 
     frame->pts = i;
 
-    /* encode the image */
+/* encode the image 压缩图片 avcodec_encode_video2
+参数说明：
+1.c :codec content
+2.pkt: output AVPacket.
+3.frame:AVFrame containing the raw video data to be encoded.
+4. got_output: got_packet_ptr This field is set to 1 by libavcodec if the
+ * output packet is non-empty, and to 0 if it is empty.
+*/
     ret = avcodec_encode_video2(c, pkt, frame, &got_output);
 
     if (ret < 0)
@@ -279,11 +287,14 @@ void CapThread::updateMouseShape(const QPoint point,Qt::CursorShape shape)
     case Qt::DragLinkCursor:
     case Qt::BitmapCursor:
     case Qt::CustomCursor:
-        setCursor(Qt::ArrowCursor);
+//        SetCursor(Qt::ArrowCursor);
+
         break;
     default:
-        setCursor(Qt::ArrowCursor);
+//        SetCursor(Qt::ArrowCursor);
 
+//        QCursor::setPos();
+//        SetCursor();
         break;
     }
 }
