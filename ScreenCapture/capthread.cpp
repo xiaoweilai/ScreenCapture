@@ -288,8 +288,8 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     }
 
     //    c->bit_rate = 400000;
-    pEc->width = DESK_WIDTH;
-    pEc->height = DESK_HEIGHT;
+    pEc->width = resize_width;
+    pEc->height = resize_height;
     //c->time_base = (AVRational){1, 25};//num,den
     pEc->gop_size = 20;
     pEc->max_b_frames = 1;
@@ -453,7 +453,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
 //        return -1;
         exit(1);
     }
-    int screen_w=1366,screen_h=768;
+    int screen_w=resize_width,screen_h=resize_height;
     const SDL_VideoInfo *vi = SDL_GetVideoInfo();
 #if 1
     //Half of the Desktop's width and height.

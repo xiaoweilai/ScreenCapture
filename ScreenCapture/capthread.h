@@ -66,12 +66,6 @@ private:
 
     QTimer* timer;
 
-//    AVFrame *frame;
-//    AVPacket* pkt;
-//    AVCodec *codec;
-//    AVCodecContext *c;
-//    int i, ret, got_output;
-
     int resize_width, resize_height;
 
 
