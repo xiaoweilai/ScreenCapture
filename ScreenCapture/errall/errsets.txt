@@ -1,0 +1,28 @@
+=====================================================================================
+/mingw/lib/libmingw32.a(main.o):main.c:(.text+0x104)||undefined reference to `WinMain@16' |
+往pro文件按顺序加入下面三行:
+     -lmingw32 /
+     -lSDLmain /
+     -lSDL /
+     
+     sdl库中文件(sdl.h)里将 #include "SDLMain.h" 注释掉,否则qDebug(),printf全部无法显示 
+     
+     有可能使用 #pragma message()造成,方法：不使用#pragma message()
+========================================================================
+
+
+/** @file SDL.h
+ *  Main include header for the SDL library
+ */
+
+#ifndef _SDL_H
+#define _SDL_H
+
+//#include "SDL_main.h"  #需要注释掉此头文件
+#include "SDL_stdinc.h"
+#include "SDL_audio.h"
+
+
+
+
+

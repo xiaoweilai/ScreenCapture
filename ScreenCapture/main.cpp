@@ -91,7 +91,7 @@ static int decode_write_frame(AVCodecContext *avctx, AVFrame *frame, int *frame_
 }
 
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
 #ifdef ORGSRC
