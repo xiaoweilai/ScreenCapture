@@ -58,25 +58,21 @@ class CapThread : public QThread
     Q_OBJECT
 
 public:
-//    int sfp_refresh_thread(void *opaque);
-//    static int thread_exit;
     void show_dshow_device();
     void show_avfoundation_device();
 private:
 
     QTimer* timer;
-
     int resize_width, resize_height;
 
 
-    AVFormatContext	*pFormatCtx;
-    int				i,ret,got_output,got_picture, videoindex;
-    AVCodecContext	*pEc,*pDc;
+    AVFormatContext	*pFormatCtx; /*  */
+    AVCodecContext	*pEc,*pDc; /* ±àÂë¡¢½âÂë */
     AVCodec			*pEcodec,*pDcodec;
-    AVPacket *pkt;
-    AVFrame	*pEframe,*pDframe,*pDFrameYUV;
-    FILE* f;
-
+    AVPacket *pkt;/* °ü */
+    AVFrame	 *pEframe,*pDframe,*pDFrameYUV;/* ±àÂëÖ¡¡¢½âÂëÖ¡ */
+    FILE* f;/* ÎÄ¼þ¾ä±ú */
+    int	i,ret,got_output,got_picture, videoindex;/*  */
 
 
 public:
@@ -84,13 +80,10 @@ public:
     
 private:
     void run();
-    void updateMouseShape(const QPoint point, Qt::CursorShape shape);
 signals:
     
 public slots:
     void capFrame();
-//    void setImagePixel(const QPoint &pos, bool opaque);
-    
 };
 
 #endif // CAPTHREAD_H

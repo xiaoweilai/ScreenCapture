@@ -549,7 +549,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
 
                         if (got_output)
                         {
-                            printf("Write frame %3d (size=%5d)\n", i, pkt->size);
+                            printf("Write frame %3d (size=%5d)\n", i++, pkt->size);
 
                             fwrite(pkt->data, 1, pkt->size, f);
                             fflush(f);
@@ -598,47 +598,5 @@ void CapThread::run()
 {
     while(1){
 //        capFrame();
-    }
-}
-
-
-void CapThread::updateMouseShape(const QPoint point,Qt::CursorShape shape)
-{
-    switch(shape)
-    {
-
-    case Qt::ArrowCursor:
-    case Qt::UpArrowCursor:
-    case Qt::CrossCursor:
-    case Qt::WaitCursor:
-    case Qt::IBeamCursor:
-    case Qt::SizeVerCursor:
-    case Qt::SizeHorCursor:
-    case Qt::SizeBDiagCursor:
-    case Qt::SizeFDiagCursor:
-    case Qt::SizeAllCursor:
-    case Qt::BlankCursor:
-    case Qt::SplitVCursor:
-    case Qt::SplitHCursor:
-    case Qt::PointingHandCursor:
-    case Qt::ForbiddenCursor:
-    case Qt::WhatsThisCursor:
-    case Qt::BusyCursor:
-    case Qt::OpenHandCursor:
-    case Qt::ClosedHandCursor:
-    case Qt::DragCopyCursor:
-    case Qt::DragMoveCursor:
-    case Qt::DragLinkCursor:
-    case Qt::BitmapCursor:
-    case Qt::CustomCursor:
-        //        SetCursor(Qt::ArrowCursor);
-
-        break;
-    default:
-        //        SetCursor(Qt::ArrowCursor);
-
-        //        QCursor::setPos();
-        //        SetCursor();
-        break;
     }
 }
