@@ -3,6 +3,7 @@
 #include "version.h"
 #include <QtDebug>
 
+
 ScreenCap::ScreenCap(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ScreenCap)
@@ -132,4 +133,9 @@ void ScreenCap::showTextStart()
 void ScreenCap::showTextStop()
 {
     showStateBarInfo("´«Êä½áÊø");
+}
+
+void ScreenCap::StartTransferThread()
+{
+
 }

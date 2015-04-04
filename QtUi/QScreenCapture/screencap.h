@@ -13,6 +13,7 @@ class ScreenCap : public QMainWindow
     
 public:
     explicit ScreenCap(QWidget *parent = 0);
+    void StartTransferThread(void);
     ~ScreenCap();
 private slots:
     void on_pushButtonStart_clicked();
