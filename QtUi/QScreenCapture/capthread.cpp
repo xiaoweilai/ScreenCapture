@@ -2,12 +2,6 @@
  * 最简单的基于FFmpeg的AVDevice例子（屏幕录制）
  * Simplest FFmpeg Device (Screen Capture)
  *
- * 雷霄骅 Lei Xiaohua
- * leixiaohua1020@126.com
- * 中国传媒大学/数字电视技术
- * Communication University of China / Digital TV Technology
- * http://blog.csdn.net/leixiaohua1020
- *
  * 本程序实现了屏幕录制功能。可以录制并播放桌面数据。是基于FFmpeg
  * 的libavdevice类库最简单的例子。通过该例子，可以学习FFmpeg中
  * libavdevice类库的使用方法。
@@ -73,6 +67,7 @@
 #include <QGraphicsItem>
 
 
+unsigned int CapThread::mRunFlag = 1;
 
 int thread_exit=0;
 
@@ -84,9 +79,17 @@ int sfp_refresh_thread(void *opaque)
         SDL_PushEvent(&event);
         SDL_Delay(40);
     }
+    printf("sfp_refresh_thread quit!!");
     return 0;
 }
 
+void CapThread::sendSDLQuit()
+{
+    SDL_Event event;
+    event.type = SDL_QUIT;
+    SDL_PushEvent(&event);
+    SDL_Delay(40);
+}
 
 //Show Dshow Device
 void CapThread::show_dshow_device()
@@ -136,7 +139,7 @@ void CapThread::show_avfoundation_device()
 
 void CapThread::capFrame()
 {
-    #if 0
+#if 0
     QImage image = QPixmap::grabWindow(QApplication::desktop()->winId()).toImage();
     //    image = image.scaled(QSize(resize_width, resize_height));
 
@@ -369,7 +372,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     */
     if(avformat_open_input(&pFormatCtx,"desktop",ifmt,&options)!=0){
         printf("Couldn't open input stream.\n");
-//        return -1;
+        //        return -1;
         exit(1);
     }
 
@@ -412,7 +415,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     if(avformat_find_stream_info(pFormatCtx,NULL)<0)
     {
         printf("Couldn't find stream information.\n");
-//        return -1;
+        //        return -1;
         exit(1);
     }
     videoindex=-1;
@@ -425,7 +428,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     if(videoindex==-1)
     {
         printf("Didn't find a video stream.\n");
-//        return -1;
+        //        return -1;
         exit(1);
     }
     pDc=pFormatCtx->streams[videoindex]->codec;
@@ -433,13 +436,13 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     if(pDcodec==NULL)
     {
         printf("Codec not found.\n");
-//        return -1;
+        //        return -1;
         exit(1);
     }
     if(avcodec_open2(pDc, pDcodec,NULL)<0)
     {
         printf("Could not open codec.\n");
-//        return -1;
+        //        return -1;
         exit(1);
     }
 
@@ -450,59 +453,70 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     //SDL----------------------------
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
         printf( "Could not initialize SDL - %s\n", SDL_GetError());
-//        return -1;
+        //        return -1;
         exit(1);
     }
     int screen_w=resize_width,screen_h=resize_height;
     const SDL_VideoInfo *vi = SDL_GetVideoInfo();
+#define SHOWSIZEDIV 4  //DIV of the Desktop's width and height.
 #if 1
     //Half of the Desktop's width and height.
-    screen_w = vi->current_w/2;
-    screen_h = vi->current_h/2;
+    screen_w = vi->current_w/SHOWSIZEDIV;
+    screen_h = vi->current_h/SHOWSIZEDIV;
 #else
     //the Desktop's width and height.
     screen_w = vi->current_w;
     screen_h = vi->current_h;
 #endif
+
+#if 1
     SDL_Surface *screen;
+    /* 此处弹出黑屏框 */
     screen = SDL_SetVideoMode(screen_w, screen_h, 0,0);
 
     printf("screen_w:%d,screen_h:%d\n",screen_w,screen_h);
 
     if(!screen) {
         printf("SDL: could not set video mode - exiting:%s\n",SDL_GetError());
-//        return -1;
+        //        return -1;
         exit(1);
     }
-    SDL_Overlay *bmp;
+#endif
+
     bmp = SDL_CreateYUVOverlay(pDc->width, pDc->height,SDL_YV12_OVERLAY, screen);
-    SDL_Rect rect;
+
     rect.x = 0;
     rect.y = 0;
     rect.w = screen_w;
     rect.h = screen_h;
-    //SDL End------------------------
+    //SDL End-----------------------
 
-
-
-#if OUTPUT_YUV420P
-    FILE *fp_yuv=fopen("output.yuv","wb+");
-#endif
-
-    struct SwsContext *img_convert_ctx;
     img_convert_ctx = sws_getContext(pDc->width, pDc->height, pDc->pix_fmt, pDc->width, pDc->height, PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     //------------------------------
-    SDL_Thread *video_tid = SDL_CreateThread(sfp_refresh_thread,NULL);
+    video_tid = SDL_CreateThread(sfp_refresh_thread,NULL);
     //
     SDL_WM_SetCaption("Simplest FFmpeg Grab Desktop",NULL);
+
+    execcount = 0;
+    pktnum = 0;
+
+
+
+
+
+}
+
+void CapThread::run()
+{
     //Event Loop
     SDL_Event event;
-    int execcount = 0;
-    int pktnum = 0;
 
-
-
-    for (;;) {
+    while(1)
+    {
+        if(0 == mRunFlag)
+        {
+            break;
+        }
         //Wait
         SDL_WaitEvent(&event);
         if(event.type==SFM_REFRESH_EVENT){
@@ -517,7 +531,7 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
                     ret = avcodec_decode_video2(pDc, pDframe, &got_picture, pkt);
                     if(ret < 0){
                         printf("Decode Error.\n");
-//                        return -1;
+                        //                        return -1;
                         exit(1);
                     }
 
@@ -558,7 +572,6 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
 
 
                         SDL_UnlockYUVOverlay(bmp);
-
                         SDL_DisplayYUVOverlay(bmp, &rect);
 
                     }
@@ -575,28 +588,23 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
         }
 
     }
+}
 
 
+CapThread::~CapThread()
+{
+    qDebug() << "~CapThread()~CapThread()~CapThread()";
+
+    SDL_KillThread(video_tid);
+//    thread_exit=1;
     sws_freeContext(img_convert_ctx);
-
-#if OUTPUT_YUV420P
-    fclose(fp_yuv);
-#endif
-
     SDL_Quit();
-
     av_free(pEframe);
     avcodec_close(pEc);
-    //av_free(out_buffer);
+//    av_free(out_buffer);
     av_free(pDFrameYUV);
     av_free(pDframe);
     avcodec_close(pDc);
     avformat_close_input(&pFormatCtx);
-}
-
-void CapThread::run()
-{
-    while(1){
-//        capFrame();
-    }
+    fclose(f);
 }

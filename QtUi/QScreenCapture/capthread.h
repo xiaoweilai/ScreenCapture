@@ -1,7 +1,9 @@
 #ifndef CAPTHREAD_H
 #define CAPTHREAD_H
 
+
 #define __STDC_CONSTANT_MACROS
+
 
 #define MAINWORKING
 #ifdef MAINWORKING
@@ -58,8 +60,14 @@ class CapThread : public QThread
     Q_OBJECT
 
 public:
+    explicit CapThread(int width, int height, QObject *parent = 0);
+    ~CapThread();
+    void sendSDLQuit();
+
+public:
     void show_dshow_device();
     void show_avfoundation_device();
+    static unsigned int mRunFlag;
 private:
 
     QTimer* timer;
@@ -74,9 +82,13 @@ private:
     FILE* f;/* нд╪Ч╬Д╠З */
     int	i,ret,got_output,got_picture, videoindex;/*  */
 
+    struct SwsContext *img_convert_ctx;
+    SDL_Thread *video_tid;
+    int execcount;
+    int pktnum;
+    SDL_Overlay *bmp;
+    SDL_Rect rect;
 
-public:
-    explicit CapThread(int width, int height, QObject *parent = 0);
 
 private:
     void run();

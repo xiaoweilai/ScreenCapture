@@ -1,7 +1,11 @@
 #ifndef SCREENCAP_H
 #define SCREENCAP_H
 
+#define __STDC_CONSTANT_MACROS
+
+
 #include <QMainWindow>
+
 
 namespace Ui {
 class ScreenCap;
@@ -28,10 +32,12 @@ private:
     void BtnSetPix(QString str);
     void BtnEnable(void);
     void BtnDisable(void);
-    void StartCapScreen(void);
-    void StopCapScreen(void);
+    void StartCapScreen();
+    void StopCapScreen();
 private:
     Ui::ScreenCap *ui;
+    static unsigned long capThreadAddr;
+
 };
 
 #endif // SCREENCAP_H

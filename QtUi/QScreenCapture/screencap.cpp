@@ -2,7 +2,14 @@
 #include "ui_screencap.h"
 #include "version.h"
 #include <QtDebug>
+#include "capthread.h"
+#include <QtGui>
+#include <QDesktopWidget>
 
+static CapThread* th;
+
+//void * ScreenCap::capThreadAddr = NULL;
+unsigned long ScreenCap::capThreadAddr = 0;
 
 ScreenCap::ScreenCap(QWidget *parent) :
     QMainWindow(parent),
@@ -51,13 +58,13 @@ void ScreenCap::on_pushButtonStart_clicked()
     {
         qDebug() << " starting!!";
         BtnStopPix();
-        BtnDisable();
+        //        BtnDisable();
         showTextStart();
 
 
         //开始传输
         StartCapScreen();
-        BtnEnable();
+        //        BtnEnable();
     }
 }
 
@@ -96,14 +103,31 @@ void ScreenCap::BtnDisable(void)
 //开始传输
 void ScreenCap::StartCapScreen()
 {
+    int w = QApplication::desktop()->width();
+    int h = QApplication::desktop()->height();
 
+    printf("screen rect,w:%d h:%d\n", w, h);
 
+    th = new CapThread(w, h);
+
+    qDebug() << "th start addr:" << th;
+    th->start();
 }
 
 //停止传输
 void ScreenCap::StopCapScreen()
 {
-
+    CapThread::mRunFlag = 0;
+    if(NULL != th)
+    {
+        qDebug() << "delete th!!!";
+        th->sendSDLQuit();
+        th->terminate();
+        th->quit();
+        th->deleteLater();
+        delete th;
+        th = NULL;
+    }
 
 }
 
@@ -135,7 +159,3 @@ void ScreenCap::showTextStop()
     showStateBarInfo("传输结束");
 }
 
-void ScreenCap::StartTransferThread()
-{
-
-}
