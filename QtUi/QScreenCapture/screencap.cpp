@@ -5,11 +5,8 @@
 #include "capthread.h"
 #include <QtGui>
 #include <QDesktopWidget>
+#include "capthread.h"
 
-static CapThread* th;
-
-//void * ScreenCap::capThreadAddr = NULL;
-unsigned long ScreenCap::capThreadAddr = 0;
 
 ScreenCap::ScreenCap(QWidget *parent) :
     QMainWindow(parent),
@@ -20,16 +17,27 @@ ScreenCap::ScreenCap(QWidget *parent) :
     showVerion();
     BtnStartPix();
     connect(ui->lineEditIp,SIGNAL(textChanged(QString)),this,SLOT(textCheck(QString)));
+
+    int w = QApplication::desktop()->width();
+    int h = QApplication::desktop()->height();
+    printf("screen rect,w:%d h:%d\n", w, h);
+    pCapThread = new CapThread(w, h);
+    qDebug() << "pCapThread start addr:" << pCapThread;
+
+    //ctrl pthread  of capthread
+    connect(this,SIGNAL(emitCtrlPthreadStart()),pCapThread,
+            SLOT(SetStartThread()));
+    connect(this,SIGNAL(emitCtrlPthreadStop()),pCapThread,
+            SLOT(SetStopThread()));
 }
 
-ScreenCap::~ScreenCap()
-{
-    delete ui;
-}
+
 
 void ScreenCap::showVerion(void)
 {
-    QString verinfo = QString::fromLocal8Bit("录屏传输 ") + QString::fromLocal8Bit(ScreenCapVersion);;
+    QString verinfo = QString::fromLocal8Bit("录屏传输 ") +
+             QString::fromLocal8Bit(ScreenCapVersion) +
+             QString::fromLocal8Bit("，点击开始传输 ");
     ui->statusBar->showMessage(verinfo);
 }
 
@@ -40,7 +48,6 @@ void ScreenCap::showVerion(void)
 */
 void ScreenCap::on_pushButtonStart_clicked()
 {
-    //    qDebug() << " pushbutton start clicked!!";
     static unsigned int mNo = 1;
     if(0 == ((mNo++)%2)) /* 传输结束 */
     {
@@ -103,32 +110,23 @@ void ScreenCap::BtnDisable(void)
 //开始传输
 void ScreenCap::StartCapScreen()
 {
-    int w = QApplication::desktop()->width();
-    int h = QApplication::desktop()->height();
+    static int isStarted = 0;
+    if(0 == isStarted)
+    {
 
-    printf("screen rect,w:%d h:%d\n", w, h);
-
-    th = new CapThread(w, h);
-
-    qDebug() << "th start addr:" << th;
-    th->start();
+        pCapThread->start();
+        isStarted = 1;
+    }
+    else
+    {
+        emit emitCtrlPthreadStart();
+    }
 }
 
 //停止传输
 void ScreenCap::StopCapScreen()
 {
-    CapThread::mRunFlag = 0;
-    if(NULL != th)
-    {
-        qDebug() << "delete th!!!";
-        th->sendSDLQuit();
-        th->terminate();
-        th->quit();
-        th->deleteLater();
-        delete th;
-        th = NULL;
-    }
-
+    emit emitCtrlPthreadStop();
 }
 
 //检测文本变化
@@ -159,3 +157,18 @@ void ScreenCap::showTextStop()
     showStateBarInfo("传输结束");
 }
 
+
+ScreenCap::~ScreenCap()
+{
+    if(NULL != pCapThread)
+    {
+        qDebug() << "delete pCapThread!!!";
+        pCapThread->sendSDLQuit();
+        pCapThread->terminate();
+        pCapThread->quit();
+        pCapThread->deleteLater();
+        delete pCapThread;
+        pCapThread = NULL;
+    }
+    delete ui;
+}

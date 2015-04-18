@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'capthread.h'
 **
-** Created: Tue Apr 7 22:41:29 2015
+** Created: Fri Apr 17 23:58:21 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,7 +23,7 @@ static const uint qt_meta_data_CapThread[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       1,   14, // methods
+       3,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -32,12 +32,15 @@ static const uint qt_meta_data_CapThread[] = {
 
  // slots: signature, parameters, type, tag, flags
       11,   10,   10,   10, 0x0a,
+      22,   10,   10,   10, 0x0a,
+      39,   10,   10,   10, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_CapThread[] = {
-    "CapThread\0\0capFrame()\0"
+    "CapThread\0\0capFrame()\0SetStartThread()\0"
+    "SetStopThread()\0"
 };
 
 void CapThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -47,6 +50,8 @@ void CapThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         CapThread *_t = static_cast<CapThread *>(_o);
         switch (_id) {
         case 0: _t->capFrame(); break;
+        case 1: _t->SetStartThread(); break;
+        case 2: _t->SetStopThread(); break;
         default: ;
         }
     }
@@ -85,9 +90,9 @@ int CapThread::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 3)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 3;
     }
     return _id;
 }

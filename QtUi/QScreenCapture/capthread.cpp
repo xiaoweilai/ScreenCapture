@@ -27,47 +27,31 @@
  */
 
 
-
-
-
-//Output YUV420P
-#define OUTPUT_YUV420P 0
-//'1' Use Dshow
-//'0' Use GDIgrab
-#define USE_DSHOW 0
-
-//Refresh Event
-#define SFM_REFRESH_EVENT  (SDL_USEREVENT + 1)
-
-
-//#define ORGSRC
-#define DESK_WIDTH  (1366)
-#define DESK_HEIGHT (768)
-
-
-
-
-
-#define INBUF_SIZE 4096
-#define AUDIO_INBUF_SIZE 20480
-#define AUDIO_REFILL_THRESH 4096
-
-#include "capthread.h"
 #include <stdio.h>
 #include <math.h>
-
 #include <QDebug>
 #include <QPixmap>
 #include <QPainter>
 #include <QCursor>
 #include <QtCore>
-//#include <windows.h>
-//#include <winuser.h>
 #include <QWidget>
 #include <QGraphicsItem>
+#include "capthread.h"
 
 
-unsigned int CapThread::mRunFlag = 1;
+#define OUTPUT_YUV420P 0
+//'1' Use Dshow
+//'0' Use GDIgrab
+#define USE_DSHOW 0
+//Refresh Event
+#define SFM_REFRESH_EVENT  (SDL_USEREVENT + 1)
+//#define ORGSRC
+#define DESK_WIDTH  (1366)
+#define DESK_HEIGHT (768)
+#define INBUF_SIZE 4096
+#define AUDIO_INBUF_SIZE 20480
+#define AUDIO_REFILL_THRESH 4096
+
 
 int thread_exit=0;
 
@@ -116,146 +100,12 @@ void CapThread::show_avfoundation_device()
 }
 
 
-
-
-///*
-//*设置一个像素
-//*/
-//void CapThread::setImagePixel(const QPoint &pos, bool opaque)
-//{
-//    int i,j;
-//    //将窗口部件的左边转换到图像的坐标上面，部件的位置除以缩放因子则得到原始的图像位置。
-//    i=pos.x()/this->zoom;
-//    j=pos.y()/this->zoom;
-//    if(this->image.rect().contains(i,j)){//这个点是否属于图像的正确范围
-//        if(opaque){
-//            this->image.setPixel(i,j,penColor().rgba());
-//        }else{
-//            this->image.setPixel(i,j,qRgba(0,0,0,0));
-//        }
-//        update(pixelRect(i,j));
-//    }
-//}
-
-void CapThread::capFrame()
-{
-#if 0
-    QImage image = QPixmap::grabWindow(QApplication::desktop()->winId()).toImage();
-    //    image = image.scaled(QSize(resize_width, resize_height));
-
-    //    printf("resize_width:%d,resize_height:%d\n",
-    //           resize_width,
-    //           resize_height);
-    QCursor curCsor;
-    updateMouseShape(curCsor.pos(),curCsor.shape());
-    ////    QPoint curpos = QCursor::pos();
-    ////    QCursor.shape();
-    //    qDebug() <<"cursor pos:"<<cusr.pos().x()<<","<<cusr.pos().y();
-    //    QImage cursorimage = cusr.pixmap().toImage();
-
-
-
-    //    image.setPixel(curpos,QCursor.pixmap().);
-    //    int x = cusr.pos().x();
-    //    int y = cusr.pos().y();
-    //    image.setPixel(x,y,qRgba(255,255,255,255));
-    //    image.setPixel(x+1,y,qRgba(255,255,255,255));
-    //    image.setPixel(x,y+1,qRgba(255,255,255,255));
-    //    image.setPixel(x,y+2,qRgba(255,255,255,255));
-    //    image.setPixel(x,y+3,qRgba(255,255,255,255));
-    //    image.setPixel(x,y+4,qRgba(255,255,255,255));
-    //    image.setPixel(x,y+5,qRgba(255,255,255,255));
-    //    image.setPixel(x,y+6,qRgba(255,255,255,255));
-    //    curCsor.shape();
-
-
-    ////    image.set;
-    //    QPainter painter(&image);
-    //    painter.drawImage(cusr.pos(),cursorimage);
-    ////    int w = QCursor.pixmap().width();
-    ////    int h = QCursor.pixmap().height();
-    ////    painter.drawPixmap(cusr.pos().x(),curpos.y,w,h,QCursor.pixmap());
-
-    ////    QImage resultImage = image;
-    ////    QPainter painter(&resultImage);
-    ////    painter.setCompositionMode(QPainter::CompositionMode_Xor);
-    ////    painter.drawImage(curpos, butterflyImage);
-
-
-
-
-    av_init_packet(pkt);
-    pkt->data = NULL;    // packet data will be allocated by the encoder
-    pkt->size = 0;
-
-    for (int h = 0; h < c->height; h++)
-    {
-        for (int w = 0; w < c->width; w++)
-        {
-            QRgb rgb = image.pixel(w, h);
-
-            int r = qRed(rgb);
-            int g = qGreen(rgb);
-            int b = qBlue(rgb);
-
-            int dy = ((66*r + 129*g + 25*b) >> 8) + 16;
-            int du = ((-38*r + -74*g + 112*b) >> 8) + 128;
-            int dv = ((112*r + -94*g + -18*b) >> 8) + 128;
-
-            uchar yy = (uchar)dy;
-            uchar uu = (uchar)du;
-            uchar vv = (uchar)dv;
-
-            frame->data[0][h * frame->linesize[0] + w] = yy;
-
-            if(h % 2 == 0 && w % 2 == 0)
-            {
-                frame->data[1][h/2 * (frame->linesize[1]) + w/2] = uu;
-                frame->data[2][h/2 * (frame->linesize[2]) + w/2] = vv;
-            }
-
-        }
-    }
-
-    frame->pts = i;
-
-    /* encode the image 压缩图片 avcodec_encode_video2
-参数说明：
-1.c :codec content
-2.pkt: output AVPacket.
-3.frame:AVFrame containing the raw video data to be encoded.
-4. got_output: got_packet_ptr This field is set to 1 by libavcodec if the
- * output packet is non-empty, and to 0 if it is empty.
-*/
-    ret = avcodec_encode_video2(c, pkt, frame, &got_output);
-
-    if (ret < 0)
-    {
-        printf("Error encoding frame\n");
-        exit(1);
-    }
-
-    if (got_output)
-    {
-        printf("Write frame %3d (size=%5d)\n", i, pkt->size);
-
-        fwrite(pkt->data, 1, pkt->size, f);
-        fflush(f);
-        av_free_packet(pkt);
-    }
-
-    i ++;
-#endif
-}
-
-
 CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
 {
+    m_threadstate = STAT_THREAD_RUNNING;
     //save screen rect
     resize_width = width;
     resize_height = height;
-
-
     //ffmpeg info
     av_register_all();
     avformat_network_init();
@@ -269,28 +119,19 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
 
 
     printf("sizeof(AVPacket): %d\n",   sizeof(AVPacket));
-    //Open File
-    //char filepath[]="src01_480x272_22.h265";
-    //avformat_open_input(&pFormatCtx,filepath,NULL,NULL)
-
-
 
     pEcodec = avcodec_find_encoder(AV_CODEC_ID_H264);
-
     if (pEcodec == 0)
     {
         printf("find encoder failed\n");
         exit(1);
     }
-
     pEc = avcodec_alloc_context3(pEcodec);
     if (!pEc)
     {
         printf("alloc context failed\n");
         exit(1);
     }
-
-    //    c->bit_rate = 400000;
     pEc->width = resize_width;
     pEc->height = resize_height;
     //c->time_base = (AVRational){1, 25};//num,den
@@ -307,14 +148,12 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
         printf("open codec failed\n");
         exit(1);
     }
-
     f = fopen("test.mpg", "wb");
     if (!f)
     {
         printf("open output file failed\n");
         exit(1);
     }
-
 
     pEframe = av_frame_alloc();
     if (!pEframe)
@@ -404,8 +243,6 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
         return -1;
     }
 #endif
-
-
     /*avformat_find_stream_info
     func: read packets of a media file to get stream infomation.
     param:
@@ -420,11 +257,13 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     }
     videoindex=-1;
     for(i=0; i<pFormatCtx->nb_streams; i++)
+    {
         if(pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
         {
             videoindex=i;
             break;
         }
+    }
     if(videoindex==-1)
     {
         printf("Didn't find a video stream.\n");
@@ -458,21 +297,18 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     }
     int screen_w=resize_width,screen_h=resize_height;
     const SDL_VideoInfo *vi = SDL_GetVideoInfo();
-#define SHOWSIZEDIV 4  //DIV of the Desktop's width and height.
-#if 1
+#define SHOWSIZEDIV 5  //DIV of the Desktop's width and height.
+
     //Half of the Desktop's width and height.
     screen_w = vi->current_w/SHOWSIZEDIV;
     screen_h = vi->current_h/SHOWSIZEDIV;
-#else
-    //the Desktop's width and height.
-    screen_w = vi->current_w;
-    screen_h = vi->current_h;
-#endif
+
 
 #if 1
     SDL_Surface *screen;
     /* 此处弹出黑屏框 */
     screen = SDL_SetVideoMode(screen_w, screen_h, 0,0);
+
 
     printf("screen_w:%d,screen_h:%d\n",screen_w,screen_h);
 
@@ -490,20 +326,15 @@ CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
     rect.w = screen_w;
     rect.h = screen_h;
     //SDL End-----------------------
-
+//    YCbCr 4:2:0
     img_convert_ctx = sws_getContext(pDc->width, pDc->height, pDc->pix_fmt, pDc->width, pDc->height, PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     //------------------------------
     video_tid = SDL_CreateThread(sfp_refresh_thread,NULL);
     //
-    SDL_WM_SetCaption("Simplest FFmpeg Grab Desktop",NULL);
+    SDL_WM_SetCaption("FFmpeg Grab Desktop",NULL);
 
     execcount = 0;
     pktnum = 0;
-
-
-
-
-
 }
 
 void CapThread::run()
@@ -513,9 +344,9 @@ void CapThread::run()
 
     while(1)
     {
-        if(0 == mRunFlag)
+        if(STAT_THREAD_STOPED == GetThreadFlag())
         {
-            break;
+            continue;
         }
         //Wait
         SDL_WaitEvent(&event);
@@ -544,13 +375,6 @@ void CapThread::run()
                         pDFrameYUV->linesize[1]=bmp->pitches[2];
                         pDFrameYUV->linesize[2]=bmp->pitches[1];
                         sws_scale(img_convert_ctx, (const uint8_t* const*)pDframe->data, pDframe->linesize, 0, pDc->height, pDFrameYUV->data, pDFrameYUV->linesize);
-                        //
-                        //#if OUTPUT_YUV420P
-                        //						int y_size=c->width*c->height;
-                        //						fwrite(pFrameYUV->data[0],1,y_size,fp_yuv);    //Y
-                        //						fwrite(pFrameYUV->data[1],1,y_size/4,fp_yuv);  //U
-                        //						fwrite(pFrameYUV->data[2],1,y_size/4,fp_yuv);  //V
-                        //#endif
 
                         ret = avcodec_encode_video2(pEc, pkt, pDFrameYUV, &got_output);
 
@@ -569,8 +393,6 @@ void CapThread::run()
                             fflush(f);
                             //av_free_packet(pkt);
                         }
-
-
                         SDL_UnlockYUVOverlay(bmp);
                         SDL_DisplayYUVOverlay(bmp, &rect);
 
@@ -586,25 +408,48 @@ void CapThread::run()
             thread_exit=1;
             break;
         }
-
     }
+
+
+//    SDL_KillThread(video_tid);
+    //    thread_exit=1;
+    sws_freeContext(img_convert_ctx);
+    SDL_Quit();
+    av_free(pEframe);
+    avcodec_close(pEc);
+    //    av_free(out_buffer);
+    av_free(pDFrameYUV);
+    av_free(pDframe);
+    avcodec_close(pDc);
+    avformat_close_input(&pFormatCtx);
+    fclose(f);
 }
 
 
 CapThread::~CapThread()
 {
     qDebug() << "~CapThread()~CapThread()~CapThread()";
+}
 
-    SDL_KillThread(video_tid);
-//    thread_exit=1;
-    sws_freeContext(img_convert_ctx);
-    SDL_Quit();
-    av_free(pEframe);
-    avcodec_close(pEc);
-//    av_free(out_buffer);
-    av_free(pDFrameYUV);
-    av_free(pDframe);
-    avcodec_close(pDc);
-    avformat_close_input(&pFormatCtx);
-    fclose(f);
+void CapThread::capFrame()
+{
+
+}
+void CapThread::SetThreadFlag(quint8 flag)
+{
+    m_threadstate = flag;
+}
+
+quint8 CapThread::GetThreadFlag(void)
+{
+    return m_threadstate;
+}
+
+void CapThread::SetStartThread()
+{
+    SetThreadFlag(STAT_THREAD_RUNNING);
+}
+void CapThread::SetStopThread()
+{
+    SetThreadFlag(STAT_THREAD_STOPED);
 }

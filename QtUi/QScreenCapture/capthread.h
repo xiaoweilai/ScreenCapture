@@ -1,12 +1,19 @@
 #ifndef CAPTHREAD_H
 #define CAPTHREAD_H
 
-
-#define __STDC_CONSTANT_MACROS
-
-
 #define MAINWORKING
 #ifdef MAINWORKING
+
+extern "C"{
+#ifdef __cplusplus
+ #define __STDC_CONSTANT_MACROS
+ #ifdef _STDINT_H
+  #undef _STDINT_H
+ #endif
+ # include <stdint.h>
+#endif
+}
+
 //Windows
 extern "C"
 {
@@ -55,6 +62,12 @@ struct AVPacket;
 struct AVCodec;
 struct AVCodecContext;
 
+enum
+{
+    STAT_THREAD_RUNNING,
+    STAT_THREAD_STOPED
+};
+
 class CapThread : public QThread
 {
     Q_OBJECT
@@ -63,17 +76,13 @@ public:
     explicit CapThread(int width, int height, QObject *parent = 0);
     ~CapThread();
     void sendSDLQuit();
-
+    void SetThreadFlag(quint8 flag);
+    quint8 GetThreadFlag(void);
 public:
     void show_dshow_device();
     void show_avfoundation_device();
-    static unsigned int mRunFlag;
 private:
-
-    QTimer* timer;
     int resize_width, resize_height;
-
-
     AVFormatContext	*pFormatCtx; /*  */
     AVCodecContext	*pEc,*pDc; /* ±àÂë¡¢½âÂë */
     AVCodec			*pEcodec,*pDcodec;
@@ -88,6 +97,7 @@ private:
     int pktnum;
     SDL_Overlay *bmp;
     SDL_Rect rect;
+    quint8 m_threadstate;
 
 
 private:
@@ -96,6 +106,8 @@ signals:
 
 public slots:
     void capFrame();
+    void SetStartThread();
+    void SetStopThread();
 };
 
 #endif // CAPTHREAD_H

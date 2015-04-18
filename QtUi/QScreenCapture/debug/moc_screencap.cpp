@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'screencap.h'
 **
-** Created: Tue Apr 7 21:54:30 2015
+** Created: Sat Apr 18 00:02:24 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,23 +23,29 @@ static const uint qt_meta_data_ScreenCap[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       2,   14, // methods
+       4,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       0,       // signalCount
+       2,       // signalCount
+
+ // signals: signature, parameters, type, tag, flags
+      11,   10,   10,   10, 0x05,
+      34,   10,   10,   10, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-      11,   10,   10,   10, 0x08,
-      44,   40,   10,   10, 0x08,
+      56,   10,   10,   10, 0x08,
+      89,   85,   10,   10, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_ScreenCap[] = {
-    "ScreenCap\0\0on_pushButtonStart_clicked()\0"
-    "str\0textCheck(QString)\0"
+    "ScreenCap\0\0emitCtrlPthreadStart()\0"
+    "emitCtrlPthreadStop()\0"
+    "on_pushButtonStart_clicked()\0str\0"
+    "textCheck(QString)\0"
 };
 
 void ScreenCap::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -48,8 +54,10 @@ void ScreenCap::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         Q_ASSERT(staticMetaObject.cast(_o));
         ScreenCap *_t = static_cast<ScreenCap *>(_o);
         switch (_id) {
-        case 0: _t->on_pushButtonStart_clicked(); break;
-        case 1: _t->textCheck((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 0: _t->emitCtrlPthreadStart(); break;
+        case 1: _t->emitCtrlPthreadStop(); break;
+        case 2: _t->on_pushButtonStart_clicked(); break;
+        case 3: _t->textCheck((*reinterpret_cast< QString(*)>(_a[1]))); break;
         default: ;
         }
     }
@@ -87,10 +95,22 @@ int ScreenCap::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 2)
+        if (_id < 4)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 2;
+        _id -= 4;
     }
     return _id;
+}
+
+// SIGNAL 0
+void ScreenCap::emitCtrlPthreadStart()
+{
+    QMetaObject::activate(this, &staticMetaObject, 0, 0);
+}
+
+// SIGNAL 1
+void ScreenCap::emitCtrlPthreadStop()
+{
+    QMetaObject::activate(this, &staticMetaObject, 1, 0);
 }
 QT_END_MOC_NAMESPACE
