@@ -1,21 +1,26 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" 
-    android:orientation="vertical">
-	<TextView 
-	    android:id="@+id/tvAdressIP"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:text="@string/adress_ip"/>
-	<TextView 
-	    android:id="@+id/tvPort"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:text="@string/port"/>
-	<ImageView 
-	    android:id="@+id/ivPic"
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"/>
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/rel_main"
+    tools:context=".MainActivity" >
 
-</LinearLayout>
+      <ImageView 
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+	    android:scaleType="fitXY"
+	    android:id="@+id/img_lcd"
+	    />
+	<!--<ImageView 
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:id="@+id/img_lcd"
+	    /> -->
+	 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/ip_address"
+        android:textSize="35sp"
+/>
+</RelativeLayout>

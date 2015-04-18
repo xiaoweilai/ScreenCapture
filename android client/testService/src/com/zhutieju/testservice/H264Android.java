@@ -2,8 +2,14 @@ package com.zhutieju.testservice;
 
 public class H264Android {
 	static {
-		System.loadLibrary("ffmpeg");
-		System.loadLibrary("H264Android");
+		System.loadLibrary("avcodec-56");
+		System.loadLibrary("avdevice-56");
+		System.loadLibrary("avfilter-5");
+		System.loadLibrary("avformat-56");
+		System.loadLibrary("avutil-54");
+		System.loadLibrary("swresample-1");
+		System.loadLibrary("swscale-3");
+		System.loadLibrary("H264Androidffmpeg22");
 	}
 	
 	public native int initDecoder(int width,int heigth);

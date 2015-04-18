@@ -1,291 +1,347 @@
 package com.zhutieju.testservice;
 
-import java.io.File;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
+import android.graphics.Matrix;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Handler;
+import android.os.Message;
+import android.view.Menu;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
-/**
- * 服务端主Activity
- * 
- * @author Administrator
- * 
- */
-public class MainActivity extends Activity {
-	public static final String TAG = "服务端日志";
-	//ServerThread thread;
-	ReadFileThread thread;
-	boolean isActivity = true;// 控制线程ServerThread的run方法
-	long decoder;
-	H264Android h264;
+public class MainActivity extends Activity implements View.OnClickListener{
+
+	ImageView mImgLcd;
+	public static Context mContext;
+	Resources mRes;
+	private byte[] mCopyByteMessage;
+	private byte[] mGetByteMessage;
+	private byte[] mGetImageNameByte;
+	private int mByteLong;
+	private int mCurImageSize = 0;
+	private int mCurImageNameLength = 0;
+	Socket mSocket;
+	private static boolean mReceiveSuccessedFlag = false;
+	private static boolean mReceiveSuccessedBeforeFourByteFlag = false;
+	DataOutputStream mDos = null;
+	DataInputStream mDis = null;
+	Bitmap mImgBitmapShow;
+	Message msg;
+	private TextView mTextIPAddress;
+	private String mIpAddress;
+	private String mIpAddressInfo;
+	private RelativeLayout mRelMain;
+	private MyAPP mAPP = null; 
+	private Thread receiveImag;
 	
-	
-	public static ArrayList<byte[]> framebuf = new ArrayList<byte[]>();
-	//352,288
+//	H264Android h264;
+//	long decoder;
 	private int screenWidth = 1920;
 	private int screenHeight = 1080;
-	byte[] mPixel = new byte[screenWidth * screenHeight*4*16];
+	byte[] mPixel = new byte[screenWidth * screenHeight*4];
 	ByteBuffer buffer = ByteBuffer.wrap(mPixel);
+	private int packageHead = 0xFFFEFFFE;
 	
+	@SuppressLint("NewApi")
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(new MyView(this));
-		h264 = new H264Android();
-		decoder =  h264.initDecoder(screenWidth,screenHeight);
+		setContentView(R.layout.activity_main);
+		mContext = MainActivity.this;
+		mRes = mContext.getResources();
+//		mAPP = (MyAPP)getApplication();
+//		mAPP.setHandler(mHandler);
+		PublicFunction.getScreenWithAndHeight(mContext);
+		mImgLcd = (ImageView)findViewById(R.id.img_lcd);
+		mImgLcd.setImageResource(R.drawable.angelababy);
+		mImgLcd.setClickable(true);
+		mTextIPAddress = (TextView)findViewById(R.id.ip_address);
+		mRelMain = (RelativeLayout)findViewById(R.id.rel_main);
+		mRelMain.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+		mRelMain.setOnClickListener(this);
+
+		mImgLcd.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+	
+				mImgLcd.setImageResource(R.drawable.angelababy);
+
+			}
+		});
+		
+//		h264 = new H264Android();
+//		decoder =  h264.initDecoder(screenWidth,screenHeight);
 		int i = mPixel.length;
 		for (i = 0; i < mPixel.length; i++) {
 			mPixel[i] = (byte) 0x00;
 		}
-		//thread = new ServerThread();
-		thread = new ReadFileThread();
-		thread.start();
-		new Thread(new DecordeThread()).start();
+		
+		setIpAddress();
+		try{
+			SocketServer();
+		}catch(Throwable e){
+			e.printStackTrace();
+			System.out.println("SocketServer Th rowable");
+			mHandler.sendEmptyMessage(6);
+ 			receiveImag.interrupt();
+		} finally{
+			
+		}				
 	}
-
+	
 	@Override
-	protected void onDestroy() {
-		// TODO Auto-generated method stub
-		super.onDestroy();
-		if (thread.isAlive()) {
-			isActivity = false;
-		}
-		finish();
-		System.exit(0);
+	protected void onResume() {
+		setIpAddress();
+		super.onResume();
 	}
+	
+	private Bitmap changeBitmapSize(Bitmap bitmapOrg){
+        int width = bitmapOrg.getWidth();
+        int height = bitmapOrg.getHeight();
+        int newWidth = 560;
+        int newHeight = 400;
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+//        matrix.postRotate(45);     
+        bitmapOrg = Bitmap.createBitmap(bitmapOrg, 0, 0,
+        width, height, matrix, true);
+        return bitmapOrg;
+	}
+	
+	private void SocketServer(){
+		mByteLong = 0;
+		mCurImageSize = 0;
+		mCurImageNameLength = 0;
+		mHandler.sendEmptyMessage(5);
+		mReceiveSuccessedFlag = false;
+		if(mIpAddress != null){
+			receiveImag = new Thread(run);
+			receiveImag.start();
+		}
+	}
+	
+	MyHandler mHandler = new MyHandler();
+	
+	private void setIpAddress(){
+		mIpAddressInfo = mRes.getString(R.string.ipaddress);
+		if(mTextIPAddress.getVisibility() != View.VISIBLE){
+			mTextIPAddress.setVisibility(View.VISIBLE);
+		}
+   		 try {
+   			mIpAddress = PublicFunction.getLocalIPAddress();
+   			mIpAddressInfo = String.format(mIpAddressInfo, mIpAddress);
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+   		 
+   		 if(mIpAddress != null){
+   			 mHandler.removeMessages(7);
+   			 mTextIPAddress.setText(mIpAddressInfo);
+		} else {
+			mHandler.sendEmptyMessageDelayed(7, 1000);
+			mTextIPAddress.setText("未获取正确的IP地址，请检查后在查看。");
+		}	
+	}
+	Runnable run = new Runnable() {
+		
+		@Override
+		public void run() {
+			 ServerSocket ss = null;
+	         try {
+	        	 mHandler.sendEmptyMessage(2);
+				 ss = new ServerSocket();
+	        	 ss.bind(new InetSocketAddress(mIpAddress,16689)); 
 
-	/**
-	 * 获取客户端数据的线程类
-	 * 
-	 * @author Administrator
-	 * 
-	 */
-/*	public class ServerThread extends Thread {
-		ServerSocket ss;// 服务端ServerSocket	
-		public ServerThread() {
+		         //服务器接收到客户端的数据后，创建与此客户端对话的Socket
+	        	 mSocket = ss.accept();
+	        	 mHandler.sendEmptyMessage(3);
+		         //用于向客户端发送数据的输出流
+		         mDos = new DataOutputStream(mSocket.getOutputStream());
+		         //用于接收客户端发来的数据的输入流
+		         mDis = new DataInputStream(mSocket.getInputStream());
+		         while(!mReceiveSuccessedFlag){
+//		        	 try{ 
+//			        	 mSocket.sendUrgentData(0xFF); 
+//			        	 }catch(Exception ex){ 
+//			        		 System.out.println("线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
+//			        		 try {
+//			     				if (null != mDis)
+//			     					mDis.close();
+//			     				if (null != mDos)
+//			     					mDos.close();
+//			     				if (null != ss){
+//			     					ss.close();
+//			     				}
+//			     			} catch (IOException ee) {
+//			     				ee.printStackTrace();
+//			     			}
+//			     			mHandler.sendEmptyMessage(6);
+//			     			receiveImag.interrupt();
+//			     			receiveImag = null;
+//			     			mReceiveSuccessedFlag = true;
+//			     			break;
+//			        	 }
+		        	 receiveMessage(mDis,mSocket,mDos);
+	        	 }
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				if(!mReceiveSuccessedFlag){
+					System.out.println("线程连接异常   run " + Thread.currentThread().getName());
+					mHandler.sendEmptyMessage(6);
+	     			receiveImag.interrupt();
+				}
+				receiveImag = null;
+				try {
+     				if (null != mDis)
+     					mDis.close();
+     				if (null != mDos)
+     					mDos.close();
+     				if (null != ss){
+     					ss.close();
+     				}
+     			} catch (IOException ee) {
+     				ee.printStackTrace();
+     			}
+			}
 			
 		}
+	};
 
-		Socket s;
-		InputStream is;
-		int len, size;
-		StringBuilder sb;;
-
-		@Override
-		public void run() {
-			try {
-				Log.v(TAG, "服务端启动成功--------------->");
-				ss = new ServerSocket(5000);	
-				s = ss.accept();
-				Log.v(TAG, "与客户端连接成功------------->"+s.toString());
-				DataInputStream dis = new DataInputStream(s.getInputStream());
-				ByteArrayOutputStream baos;
-				while (isActivity) {
-					int len2 = 0;
-					baos = new ByteArrayOutputStream();
-					
-					byte[] b = new byte[20];
-					dis.read(b);
-					try {
-						System.out.println("--->" + 
-						JTools.toStringList(b, 0, "UTF-8").get(0));
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					
-					sb = new StringBuilder();
-					while ((len = dis.read()) != '\r') {
-						if (len == -1) {
-							break;
-						}
-						sb.append((char) len);
-					}
-					if (sb.length() > 0) {
-						size = Integer.parseInt(sb.toString());
-						byte[] data = new byte[size];
-						while (size > 0
-								&& (len = dis.read(data, 0, size)) != -1) {
-							baos.write(data, 0, len);
-							size = size - len;
-						}
-					}
-					
-					len = dis.readInt();
-					Log.i(TAG, "len的大小为"+len);
-					byte[] data = new byte[len];
-					while(len>0 && (len2 = dis.read(data,0,len)) != -1) {
-						System.out.println("-------len2------->" + len2);
-						baos.write(data, 0, len2);
-						len = len - len2;
-					}
-					if(framebuf.size()>25) {
-						try {
-							sleep(800);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-					Log.i(TAG, "-------------------------------------------");
-				setOrget(1, baos.toByteArray());
+	
+public void receiveMessage(DataInputStream input, Socket s, DataOutputStream output) throws SocketException{
+		
+		int numRead = 0;
+		try {
+			int tempBytelength = input.available();
+			if(!mReceiveSuccessedBeforeFourByteFlag){
+	            if(tempBytelength >= 100){
+//	            	long tempSize = input.readLong();
+	            	int readPackageHead = input.readInt();
+	            	
+	            	if(packageHead != readPackageHead){
+	            		return;
+	            	}
+	            	long packageSize = input.readLong();
+	            	
+	            	mCurImageSize = (int)packageSize;
+//	            	mCurImageNameLength = (int)input.readLong();
+//	            	mGetImageNameByte = new byte[mCurImageNameLength];
+//	            	int name = input.read(mGetImageNameByte, 0, mCurImageNameLength);
+//	            	mCurImageSize = mCurImageSize - 8 - 8 -mCurImageNameLength;
+	            	mGetByteMessage = new byte[mCurImageSize];
+	            	mReceiveSuccessedBeforeFourByteFlag = true;
+	            }
+	            return;
+			}else {
+					numRead=input.read(mGetByteMessage, mByteLong, mCurImageSize - mByteLong);
+					if(mByteLong < mCurImageSize){
+						mByteLong += numRead;
+						return;
+					} else if(mByteLong >= mCurImageSize){
+						mByteLong = 0;
+						mCurImageSize = 0;
+						mCurImageNameLength = 0;
+						tempBytelength = 0;
+						msg = new Message();
+						msg.what = 1;
+						mHandler.sendMessage(msg);
+						mReceiveSuccessedBeforeFourByteFlag = false;
+						
+					}else{
+//						 System.out.println("numRead not read all" + numRead);
 				}
-
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
-		}
-
-		@Override
-		public void destroy() {
-			// TODO Auto-generated method stub
-			h264.releaseDecoder();
+		} catch (IOException e) {
+			Log.writeErroLogToFile("socket input output异常"
+					+ Thread.currentThread().getName());
+				Log.writeErroLogToFile("线程连接异常" + Thread.currentThread().getName());
+				System.out.println("线程连接异常  receiveMessage" + Thread.currentThread().getName());
+			
 			try {
-				if (ss != null) {
-					ss.close();
-				}
-				if (s != null) {
+				if (null != input)
+					input.close();
+				if (null != output)
+					output.close();
+				if (null != s)
 					s.close();
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException ee) {
+				ee.printStackTrace();
 			}
-			System.exit(0);
-			super.destroy();
-		}
-	} */
-	
-	/**
-	 * 读取文件类
-	 * @author Administrator
-	 *
-	 */
-	public class ReadFileThread extends Thread {
-		int file_index = 0;
-		File file = new File("/mnt/sdcard/test.mpg");
-		@Override
-		public void run() {
-			try {
-				while(file_index<file.length()) {
-					byte[] data = new byte[1024*50*16];
-					RandomAccessFile raf = new RandomAccessFile(file, "r");
-					int len = readOneFrame(raf, data);
-					Log.i(TAG, "一帧长度为:"+len);
-					byte[] newData = new byte[len];
-					System.arraycopy(data, 0, newData, 0, len);
-					//Log.i(TAG, "前四个字节为："+newData[0]+" "+newData[1]+" "+newData[2]+" "+newData[3]);
-					setOrget(1, newData);
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		/**
-		 * 读取一帧长度
-		 * @param raf	读取文件流
-		 * @param data	保存读取的数据
-		 * @return		返回一帧长度
-		 * @throws IOException
-		 */
-		private int readOneFrame(RandomAccessFile raf,byte[] data) throws IOException {
-			int len = 0;//表示一帧长度
-			raf.seek(file_index);
-			while(true) {
-				if((data[len++] = raf.readByte())==0 && (data[len++] = raf.readByte())==0 ) {
-					if((data[len++] = raf.readByte()) < 2 && len>6) {
-						if(data[len - 1] == 0) {
-							if((data[len++]=raf.readByte())==1) {
-								file_index+=(len - 4);
-								return len - 4;
-							} else {
-								continue;
-							}
-						} else {
-							file_index+=(len - 3);
-							return len - 3;
-						}
-					} else {
-						continue;
-					}
-				} else {
-					continue;
-				}
-			}
-		}
+			mHandler.sendEmptyMessage(6);
+ 			receiveImag.interrupt();
+		} 
 	}
-	
+		
+		@Override
+		public void finish() {
+			super.finish();
+			android.os.Process.killProcess(android.os.Process.myPid());
+		}
 
-	
-	/**
-	 * 保存或获取数据
-	 * @param type
-	 * @param data
-	 * @return
-	 */
-	public synchronized byte[] setOrget(int type,byte[] data) {
-		switch (type) {
-		case 1:	//放入数据
-			framebuf.add(data);
-			return null;
-		case 0: //获取数据
-			if(framebuf.size()>0) {
-				byte[] b = framebuf.get(0);
-				framebuf.remove(0);
-				return b;
-			}
-		}
-		return null;
-	}
-	
-	
-	
-	/**
-	 * 解码线程类
-	 * @author Administrator
-	 *
-	 */
-	class DecordeThread implements Runnable {
-		@Override
-		public void run() {
-			while(true) {
-				byte[] dataa = setOrget(0, null);
-				
-				if (dataa != null&&dataa.length > 0) {//一帧数据收到解码
-					Log.i(TAG, "byte dataa length "+dataa.length);
-					int resout = h264.dalDecoder(dataa, dataa.length, mPixel);
-					if(resout>0) {
-						Bitmap videoBit = Bitmap.createBitmap(screenWidth, screenHeight, Config.RGB_565);
-						try{
-							buffer.rewind();
-							videoBit.copyPixelsFromBuffer(buffer);
-							
-						}catch (Exception e) {
-							// TODO: handle exception
-						}
-						Util.setOrgetBitmap(0, videoBit);
-						Log.i(TAG, "集合中的数据："+Util.list.size());
+		/** 
+	     * 自己实现 Handler 处理消息更新UI 
+	     *  
+	     * @author mark 
+	     */  
+	    final class MyHandler extends Handler {  
+	        @Override  
+	        public void handleMessage(Message msg) {  
+	            super.handleMessage(msg);  
+	            if(msg.what == 1){
+	            	synchronized (mGetByteMessage) {
+	            		mCopyByteMessage = new byte[mGetByteMessage.length];
+	            		mCopyByteMessage = mGetByteMessage.clone();
 					}
-				} 
-			}
+//	            	int resout = h264.dalDecoder(mCopyByteMessage, mCopyByteMessage.length, mPixel);
+					mImgBitmapShow = PublicFunction.bytesToBimap(mPixel);
+					if(mImgBitmapShow != null){
+						mImgLcd.setImageBitmap(mImgBitmapShow);
+					}
+				} else if(msg.what == 2){
+					setIpAddress();
+				} else if(msg.what == 3){
+					mTextIPAddress.setVisibility(View.GONE);
+				} else if(msg.what == 5){
+					mImgLcd.setImageResource(R.drawable.angelababy);
+				} else if(msg.what == 6){
+					 SocketServer();
+				}else if(msg.what == 7){
+					setIpAddress();
+					SocketServer();
+				}
+	        }  
+	}  
+		@Override
+		public void onClick(View v) {
+//			int i = mRelMain.getSystemUiVisibility();  
+//			  if (i == View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) {  
+//				  mRelMain.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);  
+//			  } else if (i == View.SYSTEM_UI_FLAG_VISIBLE){  
+//				  mRelMain.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);  
+//			  } else if (i == View.SYSTEM_UI_FLAG_LOW_PROFILE) {  
+//				  mRelMain.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);  
+//			  }   
 		}
-	}
-	
-	public static String nowTime() {
-		  Calendar c = Calendar.getInstance();
-		  c.setTimeInMillis(new Date().getTime());
-		  SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		  return dateFormat.format(c.getTime());
-		 }
+
 }
