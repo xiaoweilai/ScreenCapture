@@ -37,6 +37,7 @@
 #include <QWidget>
 #include <QGraphicsItem>
 #include <QMessageBox>
+#include <QRegExp>
 #include "capthread.h"
 
 
@@ -113,19 +114,34 @@ void CapThread::show_avfoundation_device()
     printf("=============================\n");
 }
 
+int CapThread::CheckIPAddr(QString ipaddr)
+{
+    QRegExp regExp("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+    if(!regExp.exactMatch(ipaddr))
+    {
+        QMessageBox::warning(NULL, str_china("提示"), str_china("ip地址错误"),NULL,NULL);
+        return RET_FAIL;
+    }
+
+    return RET_SUCESS;
+}
+
+
 int CapThread::WithNetworkInit(QString ipaddr)
 {
+    if(RET_SUCESS != CheckIPAddr(ipaddr))
+    {
+        return RET_FAIL;
+    }
+
     p_tcpClient = NULL;//tcp socket
+    TotalBytes = 0;
 
     //创建tcpsocket
     p_tcpClient = new QTcpSocket;
     if(!p_tcpClient)
         return RET_FAIL;
 
-    connect(p_tcpClient,SIGNAL(connected()),this,
-            SLOT(startTransfer()));
-    connect(p_tcpClient,SIGNAL(bytesWritten(qint64)),this,
-            SLOT(updateClientProgress(qint64)));
     connect(p_tcpClient,SIGNAL(error(QAbstractSocket::SocketError)),this,
             SLOT(displayErr(QAbstractSocket::SocketError)));
     p_tcpClient->connectToHost(ipaddr,
@@ -387,7 +403,7 @@ CapThread::CapThread(int* retInt,int width, int height,QString textIp, QObject *
     rect.w = screen_w;
     rect.h = screen_h;
     //SDL End-----------------------
-//    YCbCr 4:2:0
+    //    YCbCr 4:2:0
     img_convert_ctx = sws_getContext(pDc->width, pDc->height, pDc->pix_fmt, pDc->width, pDc->height, PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     //------------------------------
     video_tid = SDL_CreateThread(sfp_refresh_thread,NULL);
@@ -448,6 +464,9 @@ void CapThread::run()
 
                         if (got_output)
                         {
+                            SendPkgData(pkt);
+
+
                             printf("Write frame %3d (size=%5d)\n", i++, pkt->size);
 
                             fwrite(pkt->data, 1, pkt->size, f);
@@ -472,7 +491,7 @@ void CapThread::run()
     }
 
 
-//    SDL_KillThread(video_tid);
+    //    SDL_KillThread(video_tid);
     //    thread_exit=1;
     sws_freeContext(img_convert_ctx);
     SDL_Quit();
@@ -484,6 +503,25 @@ void CapThread::run()
     avcodec_close(pDc);
     avformat_close_input(&pFormatCtx);
     fclose(f);
+}
+
+//网络发送数据流
+int CapThread::SendPkgData(AVPacket *pkt)
+{
+    if(pkt)
+    {
+        outBlock.resize(0);
+        QDataStream sendOut(&outBlock, QIODevice::WriteOnly);
+        sendOut.resetStatus();
+        sendOut.setVersion(QDataStream::Qt_4_0);
+        sendOut << 0xFFFE << 0xFFFE; //数据头
+        TotalBytes = pkt->size; //大小
+        sendOut << TotalBytes << pkt->data; //大小（8B）+ 数据
+        if(p_tcpClient)
+        {
+            p_tcpClient->write(outBlock);
+        }
+    }
 }
 
 
@@ -513,4 +551,29 @@ void CapThread::SetStartThread()
 void CapThread::SetStopThread()
 {
     SetThreadFlag(STAT_THREAD_STOPED);
+}
+
+
+void CapThread::displayErr(QAbstractSocket::SocketError socketError)
+{
+    qDebug() << "display err";
+    if(NULL == p_tcpClient)
+    {
+        QMessageBox::information(NULL,str_china("网络"),
+                                 str_china("产生如下错误：连接失败"),NULL,NULL);
+    }else{
+        QMessageBox::information(NULL,str_china("网络"),
+                                 str_china("产生如下错误： %1")
+                                 .arg(p_tcpClient->errorString()),NULL,NULL);
+    }
+
+    if(NULL != p_tcpClient)
+    {
+        p_tcpClient->abort();
+        p_tcpClient->waitForDisconnected();
+        p_tcpClient->disconnectFromHost();
+        p_tcpClient->close();
+        p_tcpClient->deleteLater();
+        p_tcpClient = NULL;
+    }
 }

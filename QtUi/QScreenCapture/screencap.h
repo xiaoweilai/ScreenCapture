@@ -63,6 +63,7 @@ private:
     void showTextStop();
     void showStateBarInfo(const char *pstr);
     void showVerion(void);
+    void showText_ClickToStart(void);
     void BtnStartPix(void);
     void BtnStopPix(void);
     void BtnSetPix(QString str);
@@ -72,6 +73,7 @@ private:
     void StopCapScreen();
 private:
     Ui::ScreenCap *ui;
+    static int isStarted;
 
 
 signals:

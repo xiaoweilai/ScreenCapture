@@ -7,6 +7,7 @@
 #include <QDesktopWidget>
 #include "capthread.h"
 
+int ScreenCap::isStarted = STAT_STOPPED;
 
 int ScreenCap::WithCapthread()
 {
@@ -53,6 +54,13 @@ void ScreenCap::showVerion(void)
     ui->statusBar->showMessage(verinfo);
 }
 
+
+void ScreenCap::showText_ClickToStart(void)
+{
+    QString verinfo = QString::fromLocal8Bit("点击开始传输 ");
+    ui->statusBar->showMessage(verinfo);
+}
+
 /*
 刚开始并未进入此按钮中
 第一次点击时，默认进入停止按钮，设置为传输中...
@@ -83,7 +91,7 @@ void ScreenCap::on_pushButtonStart_clicked()
         if(STAT_STOPPED == StartCapScreen())
         {
             BtnStartPix();
-            showTextStop();
+            showText_ClickToStart();
             mNo = 1;
         }
     }
@@ -124,7 +132,6 @@ void ScreenCap::BtnDisable(void)
 //开始传输
 int ScreenCap::StartCapScreen()
 {
-    static int isStarted = STAT_STOPPED;
     if(STAT_STOPPED == isStarted)
     {
         if(RET_SUCESS == WithCapthread())
@@ -184,7 +191,7 @@ void ScreenCap::showTextStop()
 
 ScreenCap::~ScreenCap()
 {
-    if(NULL != pCapThread)
+    if((NULL != pCapThread)&&(STAT_STARTED == ScreenCap::isStarted))
     {
         qDebug() << "delete pCapThread!!!";
         pCapThread->sendSDLQuit();

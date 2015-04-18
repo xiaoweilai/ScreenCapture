@@ -96,6 +96,8 @@ public:
     void SetThreadFlag(quint8 flag);
     quint8 GetThreadFlag(void);
     int WithNetworkInit(QString ipaddr);
+    int CheckIPAddr(QString ipaddr);
+    int SendPkgData(AVPacket *pkt);
 public:
     void show_dshow_device();
     void show_avfoundation_device();
@@ -119,6 +121,8 @@ private:
 
     /*************[ÍøÂç´«Êä]**********************/
     QTcpSocket *p_tcpClient;
+    QByteArray outBlock;
+    qint64 TotalBytes;
 
 private:
     void run();
@@ -128,6 +132,7 @@ public slots:
     void capFrame();
     void SetStartThread();
     void SetStopThread();
+    void displayErr(QAbstractSocket::SocketError socketError);
 };
 
 #endif // CAPTHREAD_H
