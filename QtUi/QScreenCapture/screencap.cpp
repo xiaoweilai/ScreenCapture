@@ -8,6 +8,30 @@
 #include "capthread.h"
 
 
+int ScreenCap::WithCapthread()
+{
+    int ret = RET_SUCESS;
+    int w = QApplication::desktop()->width();
+    int h = QApplication::desktop()->height();
+    printf("screen rect,w:%d h:%d\n", w, h);
+    pCapThread = new CapThread(&ret,w, h,ui->lineEditIp->text());
+    if(RET_SUCESS != ret)
+    {
+        qDebug() << "pCapThread create failed";
+        return RET_FAIL;
+    }
+
+    qDebug() << "pCapThread start addr:" << pCapThread;
+    //ctrl pthread  of capthread
+    connect(this,SIGNAL(emitCtrlPthreadStart()),pCapThread,
+            SLOT(SetStartThread()));
+    connect(this,SIGNAL(emitCtrlPthreadStop()),pCapThread,
+            SLOT(SetStopThread()));
+
+
+    return RET_SUCESS;
+}
+
 ScreenCap::ScreenCap(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ScreenCap)
@@ -17,18 +41,6 @@ ScreenCap::ScreenCap(QWidget *parent) :
     showVerion();
     BtnStartPix();
     connect(ui->lineEditIp,SIGNAL(textChanged(QString)),this,SLOT(textCheck(QString)));
-
-    int w = QApplication::desktop()->width();
-    int h = QApplication::desktop()->height();
-    printf("screen rect,w:%d h:%d\n", w, h);
-    pCapThread = new CapThread(w, h);
-    qDebug() << "pCapThread start addr:" << pCapThread;
-
-    //ctrl pthread  of capthread
-    connect(this,SIGNAL(emitCtrlPthreadStart()),pCapThread,
-            SLOT(SetStartThread()));
-    connect(this,SIGNAL(emitCtrlPthreadStop()),pCapThread,
-            SLOT(SetStopThread()));
 }
 
 
@@ -36,8 +48,8 @@ ScreenCap::ScreenCap(QWidget *parent) :
 void ScreenCap::showVerion(void)
 {
     QString verinfo = QString::fromLocal8Bit("录屏传输 ") +
-             QString::fromLocal8Bit(ScreenCapVersion) +
-             QString::fromLocal8Bit("，点击开始传输 ");
+            QString::fromLocal8Bit(ScreenCapVersion) +
+            QString::fromLocal8Bit("，点击开始传输 ");
     ui->statusBar->showMessage(verinfo);
 }
 
@@ -65,13 +77,15 @@ void ScreenCap::on_pushButtonStart_clicked()
     {
         qDebug() << " starting!!";
         BtnStopPix();
-        //        BtnDisable();
         showTextStart();
 
-
         //开始传输
-        StartCapScreen();
-        //        BtnEnable();
+        if(STAT_STOPPED == StartCapScreen())
+        {
+            BtnStartPix();
+            showTextStop();
+            mNo = 1;
+        }
     }
 }
 
@@ -108,19 +122,29 @@ void ScreenCap::BtnDisable(void)
 }
 
 //开始传输
-void ScreenCap::StartCapScreen()
+int ScreenCap::StartCapScreen()
 {
-    static int isStarted = 0;
-    if(0 == isStarted)
+    static int isStarted = STAT_STOPPED;
+    if(STAT_STOPPED == isStarted)
     {
-
-        pCapThread->start();
-        isStarted = 1;
+        if(RET_SUCESS == WithCapthread())
+        {
+            if(pCapThread)
+                pCapThread->start();
+            isStarted = STAT_STARTED;
+        }
+        else
+        {
+            return STAT_STOPPED;
+        }
     }
     else
     {
         emit emitCtrlPthreadStart();
     }
+    qDebug() <<"isStarted:"<<isStarted;
+
+    return STAT_STARTED;
 }
 
 //停止传输

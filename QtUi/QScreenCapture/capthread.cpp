@@ -36,6 +36,7 @@
 #include <QtCore>
 #include <QWidget>
 #include <QGraphicsItem>
+#include <QMessageBox>
 #include "capthread.h"
 
 
@@ -51,6 +52,19 @@
 #define INBUF_SIZE 4096
 #define AUDIO_INBUF_SIZE 20480
 #define AUDIO_REFILL_THRESH 4096
+#define DEFAULT_PORT   "16689"
+
+
+
+#if 1
+//编码汉字
+//#define str_china(A)     QString::fromLocal8Bit(#A)
+#define str_china(A)     QString::fromLocal8Bit(A)
+//#define str_china(A)     QString::fromUtf8(#A)
+#else
+#define str_china(A)     codec->toUnicode(#A)
+#endif
+
 
 
 int thread_exit=0;
@@ -99,9 +113,56 @@ void CapThread::show_avfoundation_device()
     printf("=============================\n");
 }
 
-
-CapThread::CapThread(int width, int height, QObject *parent) : QThread(parent)
+int CapThread::WithNetworkInit(QString ipaddr)
 {
+    p_tcpClient = NULL;//tcp socket
+
+    //创建tcpsocket
+    p_tcpClient = new QTcpSocket;
+    if(!p_tcpClient)
+        return RET_FAIL;
+
+    connect(p_tcpClient,SIGNAL(connected()),this,
+            SLOT(startTransfer()));
+    connect(p_tcpClient,SIGNAL(bytesWritten(qint64)),this,
+            SLOT(updateClientProgress(qint64)));
+    connect(p_tcpClient,SIGNAL(error(QAbstractSocket::SocketError)),this,
+            SLOT(displayErr(QAbstractSocket::SocketError)));
+    p_tcpClient->connectToHost(ipaddr,
+                               QString(DEFAULT_PORT).toInt());
+    p_tcpClient->setSocketOption(QAbstractSocket::LowDelayOption, 1);//优化为最低延迟，后面的1代码启用该优化。
+
+
+    //waitForConnected()等待连接知道超过最大等待时间。如果连接建立函数返回true；否则返回false。
+    //当返回false时可以调用error来确定无法连接的原因
+    if(!p_tcpClient->waitForConnected(3000))
+    {
+        qDebug() <<"here:" << p_tcpClient;
+        if(NULL != p_tcpClient)
+        {
+            qDebug() <<"Error: "<<p_tcpClient->errorString();
+            p_tcpClient->deleteLater();
+            p_tcpClient = NULL;
+
+            QMessageBox::information(NULL, str_china("网络"), str_china("产生如下错误：连接失败"),NULL,NULL);
+            return RET_FAIL;
+        }
+    }
+
+    return RET_SUCESS;
+}
+
+CapThread::CapThread(int* retInt,int width, int height,QString textIp, QObject *parent)
+    : QThread(parent)
+{
+    qDebug() <<"ip addr:" << textIp;
+    if(RET_SUCESS != WithNetworkInit(textIp))
+    {
+        qDebug() << "CapThread create RET_FAIL!!";
+        *retInt = RET_FAIL;
+        return;
+    }
+
     m_threadstate = STAT_THREAD_RUNNING;
     //save screen rect
     resize_width = width;

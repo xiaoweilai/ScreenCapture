@@ -53,6 +53,7 @@ public:
     void SetThreadFlag(quint8 flag);
     quint8 GetThreadFlag(void);
     CapThread *pCapThread;
+    int WithCapthread();
 
 private slots:
     void on_pushButtonStart_clicked();
@@ -67,7 +68,7 @@ private:
     void BtnSetPix(QString str);
     void BtnEnable(void);
     void BtnDisable(void);
-    void StartCapScreen();
+    int StartCapScreen();
     void StopCapScreen();
 private:
     Ui::ScreenCap *ui;

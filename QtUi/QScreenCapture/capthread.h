@@ -54,7 +54,9 @@ extern "C"
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QTimer>
-
+#include <QAbstractSocket>
+#include <QTcpSocket>
+#include <QHostAddress>
 #include <stdio.h>
 
 struct AVFrame;
@@ -68,16 +70,32 @@ enum
     STAT_THREAD_STOPED
 };
 
+
+enum
+{
+    RET_SUCESS,
+    RET_FAIL,
+    RET_UNKNOWN
+};
+
+enum
+{
+    STAT_STARTED,
+    STAT_STOPPED,
+    STAT_UNKNOWN
+};
+
 class CapThread : public QThread
 {
     Q_OBJECT
 
 public:
-    explicit CapThread(int width, int height, QObject *parent = 0);
+    explicit CapThread(int* retInt,int width, int height,QString textIp, QObject *parent = 0);
     ~CapThread();
     void sendSDLQuit();
     void SetThreadFlag(quint8 flag);
     quint8 GetThreadFlag(void);
+    int WithNetworkInit(QString ipaddr);
 public:
     void show_dshow_device();
     void show_avfoundation_device();
@@ -99,6 +117,8 @@ private:
     SDL_Rect rect;
     quint8 m_threadstate;
 
+    /*************[ÍøÂç´«Êä]**********************/
+    QTcpSocket *p_tcpClient;
 
 private:
     void run();
