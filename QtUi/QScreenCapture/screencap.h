@@ -15,6 +15,7 @@ extern "C"{
 
 #include <QMainWindow>
 #include <capthread.h>
+#include <QBuffer>
 #include <stdio.h>
 #include <stdint.h>
 //Windows
@@ -35,6 +36,11 @@ extern "C"
 //#include "SDL/SDL_main.h"
 };
 
+enum{
+    SEND_UNDO,
+    SEND_DONE,
+    SEND_UNKNOWN
+};
 
 
 namespace Ui {
@@ -64,6 +70,7 @@ private:
     void showStateBarInfo(const char *pstr);
     void showVerion(void);
     void showText_ClickToStart(void);
+    void showText_Connecting(void);
     void BtnStartPix(void);
     void BtnStopPix(void);
     void BtnSetPix(QString str);
@@ -75,10 +82,33 @@ private:
     Ui::ScreenCap *ui;
     static int isStarted;
 
+    /*************[网络传输]**********************/
+    QTcpSocket *p_tcpClient;
+    QByteArray outBlock;       //缓存一次发送的数据
+    QByteArray outBlkData;//缓存一次发送的数据
+    qint64 TotalBytes;
+    qint64 byteWritten;
+    qint64 bytesToWrite;
+    quint64 picNametime;
+    QTimer *ptnettimer;
+    qint64  loadSize;          //被初始化为一个4Kb的常量
+    QBuffer buffer;//传输网络数据的一个过程
+    QByteArray tmpbyte;//保存网络数据n个的内容
+    quint8 sendDoneFlag;//数据是否发生完毕
+
 
 signals:
     void emitCtrlPthreadStart();
     void emitCtrlPthreadStop();
+
+public slots:
+    int  CheckIPAddr(QString ipaddr);
+    int  WithNetworkInit(QString ipaddr);
+    void displayErr(QAbstractSocket::SocketError socketError);
+    void updateClientProgress(qint64 numBytes);
+    void NetSend();
+    void TimerSets();
+    void MergeMessage();
 };
 
 #endif // SCREENCAP_H

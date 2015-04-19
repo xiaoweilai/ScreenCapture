@@ -59,6 +59,38 @@ extern "C"
 #include <QHostAddress>
 #include <stdio.h>
 
+
+
+#if 1
+//编码汉字
+//#define str_china(A)     QString::fromLocal8Bit(#A)
+#define str_china(A)     QString::fromLocal8Bit(A)
+//#define str_china(A)     QString::fromUtf8(#A)
+#else
+#define str_china(A)     codec->toUnicode(#A)
+#endif
+
+
+#define OUTPUT_YUV420P 0
+//'1' Use Dshow
+//'0' Use GDIgrab
+#define USE_DSHOW 0
+//Refresh Event
+#define SFM_REFRESH_EVENT  (SDL_USEREVENT + 1)
+//#define ORGSRC
+#define DESK_WIDTH  (1366)
+#define DESK_HEIGHT (768)
+#define INBUF_SIZE 4096
+#define AUDIO_INBUF_SIZE 20480
+#define AUDIO_REFILL_THRESH 4096
+#define DEFAULT_PORT   "16689"
+
+#ifndef DEBUG
+#define DEBUG
+#endif
+
+
+
 struct AVFrame;
 struct AVPacket;
 struct AVCodec;
@@ -119,10 +151,12 @@ private:
     SDL_Rect rect;
     quint8 m_threadstate;
 
+
+
+public:
     /*************[网络传输]**********************/
-    QTcpSocket *p_tcpClient;
-    QByteArray outBlock;
-    qint64 TotalBytes;
+    QList<int> arrayNetSize; //包大小
+    QList<QByteArray> arrayNetData; //包数据
 
 private:
     void run();
@@ -132,7 +166,8 @@ public slots:
     void capFrame();
     void SetStartThread();
     void SetStopThread();
-    void displayErr(QAbstractSocket::SocketError socketError);
+//    void displayErr(QAbstractSocket::SocketError socketError);
+//    void updateClientProgress(qint64 numBytes);
 };
 
 #endif // CAPTHREAD_H

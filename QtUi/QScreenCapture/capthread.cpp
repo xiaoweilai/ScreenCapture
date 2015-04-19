@@ -41,31 +41,6 @@
 #include "capthread.h"
 
 
-#define OUTPUT_YUV420P 0
-//'1' Use Dshow
-//'0' Use GDIgrab
-#define USE_DSHOW 0
-//Refresh Event
-#define SFM_REFRESH_EVENT  (SDL_USEREVENT + 1)
-//#define ORGSRC
-#define DESK_WIDTH  (1366)
-#define DESK_HEIGHT (768)
-#define INBUF_SIZE 4096
-#define AUDIO_INBUF_SIZE 20480
-#define AUDIO_REFILL_THRESH 4096
-#define DEFAULT_PORT   "16689"
-
-
-
-#if 1
-//编码汉字
-//#define str_china(A)     QString::fromLocal8Bit(#A)
-#define str_china(A)     QString::fromLocal8Bit(A)
-//#define str_china(A)     QString::fromUtf8(#A)
-#else
-#define str_china(A)     codec->toUnicode(#A)
-#endif
-
 
 
 int thread_exit=0;
@@ -114,71 +89,15 @@ void CapThread::show_avfoundation_device()
     printf("=============================\n");
 }
 
-int CapThread::CheckIPAddr(QString ipaddr)
-{
-    QRegExp regExp("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-    if(!regExp.exactMatch(ipaddr))
-    {
-        QMessageBox::warning(NULL, str_china("提示"), str_china("ip地址错误"),NULL,NULL);
-        return RET_FAIL;
-    }
 
-    return RET_SUCESS;
-}
-
-
-int CapThread::WithNetworkInit(QString ipaddr)
-{
-    if(RET_SUCESS != CheckIPAddr(ipaddr))
-    {
-        return RET_FAIL;
-    }
-
-    p_tcpClient = NULL;//tcp socket
-    TotalBytes = 0;
-
-    //创建tcpsocket
-    p_tcpClient = new QTcpSocket;
-    if(!p_tcpClient)
-        return RET_FAIL;
-
-    connect(p_tcpClient,SIGNAL(error(QAbstractSocket::SocketError)),this,
-            SLOT(displayErr(QAbstractSocket::SocketError)));
-    p_tcpClient->connectToHost(ipaddr,
-                               QString(DEFAULT_PORT).toInt());
-    p_tcpClient->setSocketOption(QAbstractSocket::LowDelayOption, 1);//优化为最低延迟，后面的1代码启用该优化。
-
-
-    //waitForConnected()等待连接知道超过最大等待时间。如果连接建立函数返回true；否则返回false。
-    //当返回false时可以调用error来确定无法连接的原因
-    if(!p_tcpClient->waitForConnected(3000))
-    {
-        qDebug() <<"here:" << p_tcpClient;
-        if(NULL != p_tcpClient)
-        {
-            qDebug() <<"Error: "<<p_tcpClient->errorString();
-            p_tcpClient->deleteLater();
-            p_tcpClient = NULL;
-
-            QMessageBox::information(NULL, str_china("网络"), str_china("产生如下错误：连接失败"),NULL,NULL);
-            return RET_FAIL;
-        }
-    }
-
-    return RET_SUCESS;
-}
 
 CapThread::CapThread(int* retInt,int width, int height,QString textIp, QObject *parent)
     : QThread(parent)
 {
     qDebug() <<"ip addr:" << textIp;
-    if(RET_SUCESS != WithNetworkInit(textIp))
-    {
-        qDebug() << "CapThread create RET_FAIL!!";
-        *retInt = RET_FAIL;
-        return;
-    }
 
+    arrayNetSize.clear();
+    arrayNetData.clear();
     m_threadstate = STAT_THREAD_RUNNING;
     //save screen rect
     resize_width = width;
@@ -466,7 +385,6 @@ void CapThread::run()
                         {
                             SendPkgData(pkt);
 
-
                             printf("Write frame %3d (size=%5d)\n", i++, pkt->size);
 
                             fwrite(pkt->data, 1, pkt->size, f);
@@ -508,19 +426,61 @@ void CapThread::run()
 //网络发送数据流
 int CapThread::SendPkgData(AVPacket *pkt)
 {
+    printf("Write pkt addr:%p \n", pkt);
     if(pkt)
     {
+#if 1
+        QByteArray bytearry;
+        bytearry.clear();
+        bytearry.setRawData((const char*)pkt->data,pkt->size);
+        fprintf(stdout,"-->>data size:%d\n",bytearry.count());
+
+        arrayNetSize.append(pkt->size);
+        arrayNetData.append(bytearry);
+        bytearry.resize(0);
+
+#else
+
         outBlock.resize(0);
         QDataStream sendOut(&outBlock, QIODevice::WriteOnly);
         sendOut.resetStatus();
         sendOut.setVersion(QDataStream::Qt_4_0);
-        sendOut << 0xFFFE << 0xFFFE; //数据头
         TotalBytes = pkt->size; //大小
-        sendOut << TotalBytes << pkt->data; //大小（8B）+ 数据
+
+
+        qDebug() << "quint32:" << sizeof(quint32);//4
+        qDebug() << "quint64:" << sizeof(quint64);//8
+        //数据头 + 8字节
+        sendOut <<(qint32)0xFFFEFFFE<< qint64(0);//加四个字节头，占8个字节空位
+        qDebug() << "outblock size:" << outBlock.size();
+        sendOut << pkt->data;//加数据(n)
+
+        qDebug() << "outblock size:" << outBlock.size();
+
+        TotalBytes = pkt->size; //大小
+        qDebug() << "TotalBytes:" << TotalBytes;
+
+        //TotalBytes为总数据长度，即（数据量长度+文件名长度+文件名）
+        TotalBytes += outBlock.size(); //加上图片名称长度
+
+        qDebug() << "outblock size:" << outBlock.size();
+        qDebug() << "TotalBytes:" << TotalBytes;
+
+
+        sendOut.device()->seek(4);
+        //总字节(文件大小 + 8字节 + 文件名) ，
+        sendOut << (qint64)TotalBytes << qint64((outBlock.size() - sizeof(qint64)*2));
+        qDebug() << "outblock size:" << outBlock.size();
+
+
+
+        printf("Write TotalBytes :%d \n", TotalBytes);
         if(p_tcpClient)
         {
+            printf("Write outBlock \n");
             p_tcpClient->write(outBlock);
         }
+#endif
     }
 }
 
@@ -553,27 +513,3 @@ void CapThread::SetStopThread()
     SetThreadFlag(STAT_THREAD_STOPED);
 }
 
-
-void CapThread::displayErr(QAbstractSocket::SocketError socketError)
-{
-    qDebug() << "display err";
-    if(NULL == p_tcpClient)
-    {
-        QMessageBox::information(NULL,str_china("网络"),
-                                 str_china("产生如下错误：连接失败"),NULL,NULL);
-    }else{
-        QMessageBox::information(NULL,str_china("网络"),
-                                 str_china("产生如下错误： %1")
-                                 .arg(p_tcpClient->errorString()),NULL,NULL);
-    }
-
-    if(NULL != p_tcpClient)
-    {
-        p_tcpClient->abort();
-        p_tcpClient->waitForDisconnected();
-        p_tcpClient->disconnectFromHost();
-        p_tcpClient->close();
-        p_tcpClient->deleteLater();
-        p_tcpClient = NULL;
-    }
-}

@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'capthread.h'
 **
-** Created: Sat Apr 18 13:36:06 2015
+** Created: Sun Apr 19 22:44:49 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,7 +23,7 @@ static const uint qt_meta_data_CapThread[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       4,   14, // methods
+       3,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -34,15 +34,13 @@ static const uint qt_meta_data_CapThread[] = {
       11,   10,   10,   10, 0x0a,
       22,   10,   10,   10, 0x0a,
       39,   10,   10,   10, 0x0a,
-      67,   55,   10,   10, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_CapThread[] = {
     "CapThread\0\0capFrame()\0SetStartThread()\0"
-    "SetStopThread()\0socketError\0"
-    "displayErr(QAbstractSocket::SocketError)\0"
+    "SetStopThread()\0"
 };
 
 void CapThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -54,10 +52,10 @@ void CapThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         case 0: _t->capFrame(); break;
         case 1: _t->SetStartThread(); break;
         case 2: _t->SetStopThread(); break;
-        case 3: _t->displayErr((*reinterpret_cast< QAbstractSocket::SocketError(*)>(_a[1]))); break;
         default: ;
         }
     }
+    Q_UNUSED(_a);
 }
 
 const QMetaObjectExtraData CapThread::staticMetaObjectExtraData = {
@@ -92,9 +90,9 @@ int CapThread::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 4)
+        if (_id < 3)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 4;
+        _id -= 3;
     }
     return _id;
 }
