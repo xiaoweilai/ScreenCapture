@@ -437,7 +437,7 @@ int CapThread::SendPkgData(AVPacket *pkt)
 
         arrayNetSize.append(pkt->size);
         arrayNetData.append(bytearry);
-        bytearry.resize(0);
+//        bytearry.resize(0);
 
 #else
 

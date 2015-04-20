@@ -5,6 +5,7 @@
 #include "capthread.h"
 #include <QtGui>
 #include <QDesktopWidget>
+#include <windows.h>
 #include "capthread.h"
 
 int ScreenCap::isStarted = STAT_STOPPED;
@@ -30,8 +31,8 @@ int ScreenCap::WithNetworkInit(QString ipaddr)
 
     connect(p_tcpClient,SIGNAL(error(QAbstractSocket::SocketError)),this,
             SLOT(displayErr(QAbstractSocket::SocketError)));
-    connect(p_tcpClient,SIGNAL(bytesWritten(qint64)),this,
-            SLOT(updateClientProgress(qint64)));
+//    connect(p_tcpClient,SIGNAL(bytesWritten(qint64)),this,
+//            SLOT(updateClientProgress(qint64)));
     p_tcpClient->connectToHost(ipaddr,
                                QString(DEFAULT_PORT).toInt());
     p_tcpClient->setSocketOption(QAbstractSocket::LowDelayOption, 1);//优化为最低延迟，后面的1代码启用该优化。
@@ -81,6 +82,18 @@ void ScreenCap::displayErr(QAbstractSocket::SocketError socketError)
     }
 }
 
+qint64 ScreenCap::writeNetData(const QByteArray &iData)
+{
+    qint64 len = p_tcpClient->write(iData);
+    bool res = p_tcpClient->waitForBytesWritten();
+    qDebug("res:%d\n",res);
+    qDebug("State:%d\n",p_tcpClient->state());  // State: 3（ConnectedState）正确
+
+//    msleep(200);
+    Sleep(200);
+    qDebug() << "len:" << len;
+    return(len);
+}
 
 void ScreenCap::MergeMessage()
 {
@@ -112,19 +125,22 @@ void ScreenCap::MergeMessage()
     //填写实际的总长度和头长度
     sendOut << TotalBytes << qint64((outBlock.size() - sizeof(qint64) * 2));
     //将头发送出去，并计算剩余的数据长度，即数据内容长度(n)
-    bytesToWrite = TotalBytes - p_tcpClient->write(outBlock);
+    qint64 len = writeNetData(outBlock);
+    bytesToWrite = TotalBytes - len;
     outBlock.resize(0);
-
-
     qDebug() << "-->TotalBytes size:" << TotalBytes;
     qDebug() << "-->bytesToWrite size:" << bytesToWrite;
 
-    sendOut << pCapThread->arrayNetData.at(0);
+
+
+//    sendOut << pCapThread->arrayNetData.at(0);
 //    QDataStream in(p_tcpClient);
 //    in << pCapThread->arrayNetData.at(0);
 
-    p_tcpClient->write(outBlock);
-    outBlock.resize(0);
+//    p_tcpClient->write(outBlock);
+
+
+//    outBlock.resize(0);
 //    in<< quint16(0xFFFF); //此时QIODevice加载了此数据，而且直接发送出去
 
 //    quint16 length = 0;
@@ -134,10 +150,12 @@ void ScreenCap::MergeMessage()
 
 
 
-    tmpbyte.clear();
+//    tmpbyte.clear();
 
 
     outBlkData = pCapThread->arrayNetData.at(0);
+
+    writeNetData(outBlkData);
 //    qDebug() << "-->tmpbyte count:" << tmpbyte.count();
 //    qDebug() << "-->tmpbyte size :" << tmpbyte.size();
 
@@ -150,83 +168,83 @@ void ScreenCap::MergeMessage()
 //    buffer.setBuffer(&tmpbyte);
 //    buffer.write(tmpbyte);
 
-    sendDoneFlag = SEND_DONE;
+
 }
 
 void ScreenCap::updateClientProgress(qint64 numBytes)
 {
-#ifdef DEBUG
-    qDebug() << "numBytes:--------->>"<<numBytes;
-#endif
-    byteWritten += (int)numBytes;
-#ifdef DEBUG
-    qDebug() << "byteWritten:" << byteWritten;
-    qDebug() << "bytesToWrite:" << bytesToWrite;
-#endif
-//    if (bytesToWrite > 0) {
-//        //        outBlock = buffer.read(qMin(bytesToWrite, loadSize));
-////        outBlock = buffer.read(qMin(bytesToWrite, loadSize));
-////        outBlkData = buffer.data();
+//#ifdef DEBUG
+//    qDebug() << "numBytes:--------->>"<<numBytes;
+//#endif
+//    byteWritten += (int)numBytes;
+//#ifdef DEBUG
+//    qDebug() << "byteWritten:" << byteWritten;
+//    qDebug() << "bytesToWrite:" << bytesToWrite;
+//#endif
+////    if (bytesToWrite > 0) {
+////        //        outBlock = buffer.read(qMin(bytesToWrite, loadSize));
+//////        outBlock = buffer.read(qMin(bytesToWrite, loadSize));
+//////        outBlkData = buffer.data();
 
-//        qDebug() << "outBlkData size:--------->>"<<outBlkData.size();
-//        qDebug() << "bytesToWrite size:--------->>"<<bytesToWrite;
-//        if(bytesToWrite == qMin(bytesToWrite, loadSize))
-//        {
-//            qDebug() << "!!write size:--------->>"<<bytesToWrite;
-//            bytesToWrite -= (int)p_tcpClient->write(outBlkData,bytesToWrite);
-//        }else{
-//            qDebug() << "write size:--------->>"<<loadSize;
-//            bytesToWrite -= (int)p_tcpClient->write(outBlkData,loadSize);
-//        }
+////        qDebug() << "outBlkData size:--------->>"<<outBlkData.size();
+////        qDebug() << "bytesToWrite size:--------->>"<<bytesToWrite;
+////        if(bytesToWrite == qMin(bytesToWrite, loadSize))
+////        {
+////            qDebug() << "!!write size:--------->>"<<bytesToWrite;
+////            bytesToWrite -= (int)p_tcpClient->write(outBlkData,bytesToWrite);
+////        }else{
+////            qDebug() << "write size:--------->>"<<loadSize;
+////            bytesToWrite -= (int)p_tcpClient->write(outBlkData,loadSize);
+////        }
 
+////    }
+////    else{
+////#ifdef DEBUG
+////        qDebug() << "-->: send image done!!";
+////#endif
+////        sendDoneFlag = SEND_DONE;
+////        picNametime++;
+////        TotalBytes = 0;
+////        byteWritten = 0;
+////        bytesToWrite = 0;
+////        if(pCapThread->arrayNetData.count() > 0)
+////        {
+////            pCapThread->arrayNetData.removeAt(0);
+////            pCapThread->arrayNetSize.removeAt(0);
+////        }
+////        buffer.close();
+////        outBlkData.resize(0);
+////    }
+
+
+//#if 0
+
+//#ifdef DEBUG
+//    qDebug() << "numBytes:--------->>"<<numBytes;
+//#endif
+//    byteWritten += (int)numBytes;
+//    if(bytesToWrite > 0)
+//    {
+//#ifdef DEBUG
+//        //        qDebug() <<"-->:outBlockFile size:" << outBlockFile.size();
+//#endif
+
+//        bytesToWrite -= (int)p_tcpClient->write(outBlockFile);
+//#ifdef DEBUG
+//        qDebug() <<"-->:bytesToWrite size:" << bytesToWrite;
+//#endif
 //    }
-//    else{
+//    else
+//    {
 //#ifdef DEBUG
 //        qDebug() << "-->: send image done!!";
 //#endif
-//        sendDoneFlag = SEND_DONE;
 //        picNametime++;
 //        TotalBytes = 0;
 //        byteWritten = 0;
-//        bytesToWrite = 0;
-//        if(pCapThread->arrayNetData.count() > 0)
-//        {
-//            pCapThread->arrayNetData.removeAt(0);
-//            pCapThread->arrayNetSize.removeAt(0);
-//        }
-//        buffer.close();
-//        outBlkData.resize(0);
+//        //        sendDoneFlag = SEND_DONE;
 //    }
-
-
-#if 0
-
-#ifdef DEBUG
-    qDebug() << "numBytes:--------->>"<<numBytes;
-#endif
-    byteWritten += (int)numBytes;
-    if(bytesToWrite > 0)
-    {
-#ifdef DEBUG
-        //        qDebug() <<"-->:outBlockFile size:" << outBlockFile.size();
-#endif
-
-        bytesToWrite -= (int)p_tcpClient->write(outBlockFile);
-#ifdef DEBUG
-        qDebug() <<"-->:bytesToWrite size:" << bytesToWrite;
-#endif
-    }
-    else
-    {
-#ifdef DEBUG
-        qDebug() << "-->: send image done!!";
-#endif
-        picNametime++;
-        TotalBytes = 0;
-        byteWritten = 0;
-        //        sendDoneFlag = SEND_DONE;
-    }
-#endif
+//#endif
 }
 
 
@@ -321,6 +339,11 @@ void ScreenCap::NetSend()
     {
         sendDoneFlag = SEND_UNDO;
         MergeMessage();
+
+        pCapThread->arrayNetData.removeAt(0);
+        pCapThread->arrayNetSize.removeAt(0);
+
+        sendDoneFlag = SEND_DONE;
     }
 
 }
@@ -493,6 +516,7 @@ int ScreenCap::CheckIPAddr(QString ipaddr)
 
     return RET_SUCESS;
 }
+
 
 
 ScreenCap::~ScreenCap()

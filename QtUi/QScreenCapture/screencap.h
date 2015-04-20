@@ -78,6 +78,9 @@ private:
     void BtnDisable(void);
     int StartCapScreen();
     void StopCapScreen();
+
+    /*************[ÍøÂç´«Êä]**********************/
+    qint64 writeNetData(const QByteArray &iData);
 private:
     Ui::ScreenCap *ui;
     static int isStarted;
