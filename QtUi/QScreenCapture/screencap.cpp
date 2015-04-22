@@ -90,7 +90,7 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
     qDebug("State:%d\n",p_tcpClient->state());  // State: 3£¨ConnectedState£©ÕýÈ·
 
 //    msleep(200);
-    Sleep(200);
+//    Sleep(200);
     qDebug() << "len:" << len;
     return(len);
 }
@@ -156,6 +156,8 @@ void ScreenCap::MergeMessage()
     outBlkData = pCapThread->arrayNetData.at(0);
 
     writeNetData(outBlkData);
+
+
 //    qDebug() << "-->tmpbyte count:" << tmpbyte.count();
 //    qDebug() << "-->tmpbyte size :" << tmpbyte.size();
 
@@ -314,7 +316,7 @@ void ScreenCap::TimerSets()
 {
     ptnettimer = new QTimer();
     connect(ptnettimer,SIGNAL(timeout()),this,SLOT(NetSend()));
-    ptnettimer->start(200);
+    ptnettimer->start(40);
 }
 
 

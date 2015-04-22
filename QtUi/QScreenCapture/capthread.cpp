@@ -430,13 +430,25 @@ int CapThread::SendPkgData(AVPacket *pkt)
     if(pkt)
     {
 #if 1
-        QByteArray bytearry;
-        bytearry.clear();
-        bytearry.setRawData((const char*)pkt->data,pkt->size);
-        fprintf(stdout,"-->>data size:%d\n",bytearry.count());
+        //*************************写入缓冲区************************//
+        //数据源
+        QByteArray byteArray;
+        //缓冲区绑定数据源
+        QBuffer buffer(&byteArray);
+        //只写模式打开缓冲区
+        buffer.open(QIODevice::WriteOnly);
+
+        //写入缓冲区
+        qint64 a = buffer.write((const char*)pkt->data,pkt->size);
+        //关闭缓冲区
+        buffer.close();
+
+        fprintf(stdout,"-->>data size:%d\n",byteArray.count());
+        fprintf(stdout,"-->>a size   :%d\n",a);
 
         arrayNetSize.append(pkt->size);
-        arrayNetData.append(bytearry);
+        arrayNetData.append(byteArray);
+//        buffer.close();
 //        bytearry.resize(0);
 
 #else
