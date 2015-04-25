@@ -10,8 +10,28 @@
 
 int ScreenCap::isStarted = STAT_STOPPED;
 
+ScreenCap::ScreenCap(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::ScreenCap)
+{
+    ui->setupUi(this);
+    ui->lineEditIp->setStyleSheet("QLineEdit{font: bold italic large \"Times New Roman\";font-size:25px;color:rgb(55,100,255);height:50px;border:4px solid rgb(155,200,33);background-color: rgba(0,0,0,30);border-radius:15px;selection-color:pink}");
+    showVerion();
+    BtnStartPix();
+    connect(ui->lineEditIp,SIGNAL(textChanged(QString)),this,SLOT(textCheck(QString)));
 
+    pCapThread = NULL;
+    TotalBytes = 0;
+    byteWritten = 0;
+    bytesToWrite = 0;
+    picNametime = 1;
+    loadSize = 4*1024;     // 4Kb
 
+    sendDoneFlag = SEND_DONE;
+
+    //定时网络发送
+    TimerSets();
+}
 
 
 int ScreenCap::WithNetworkInit(QString ipaddr)
@@ -85,12 +105,10 @@ void ScreenCap::displayErr(QAbstractSocket::SocketError socketError)
 qint64 ScreenCap::writeNetData(const QByteArray &iData)
 {
     qint64 len = p_tcpClient->write(iData);
-    bool res = p_tcpClient->waitForBytesWritten();
-    qDebug("res:%d\n",res);
+//    bool res = p_tcpClient->waitForBytesWritten();
+//    qDebug("res:%d\n",res);
     qDebug("State:%d\n",p_tcpClient->state());  // State: 3（ConnectedState）正确
 
-//    msleep(200);
-//    Sleep(200);
     qDebug() << "len:" << len;
     return(len);
 }
@@ -98,7 +116,7 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
 void ScreenCap::MergeMessage()
 {
 
-    /************************************************************
+/************************************************************
 *                数据流传送格式
 *
 *  宽度 ---|   8    |   8       |   8   |   n   |.....
@@ -131,46 +149,11 @@ void ScreenCap::MergeMessage()
     qDebug() << "-->TotalBytes size:" << TotalBytes;
     qDebug() << "-->bytesToWrite size:" << bytesToWrite;
 
-
-
-//    sendOut << pCapThread->arrayNetData.at(0);
-//    QDataStream in(p_tcpClient);
-//    in << pCapThread->arrayNetData.at(0);
-
-//    p_tcpClient->write(outBlock);
-
-
-//    outBlock.resize(0);
-//    in<< quint16(0xFFFF); //此时QIODevice加载了此数据，而且直接发送出去
-
-//    quint16 length = 0;
-//    QDataStream out(p_tcpClient);//如果此时tcpSocket直接有数据发送过来
-//    out >> length;//length获得第一个整型值，并在tcpSocket中清空该数据
-
-
-
-
-//    tmpbyte.clear();
-
-
     outBlkData = pCapThread->arrayNetData.at(0);
 
     writeNetData(outBlkData);
 
-
-//    qDebug() << "-->tmpbyte count:" << tmpbyte.count();
-//    qDebug() << "-->tmpbyte size :" << tmpbyte.size();
-
-//    QDataStream s(&tmpbyte, QIODevice::ReadOnly);
-//    s >> outBlkData;      // 读取原始的bindata
-
     qDebug() << "-->outBlkData size :" << outBlkData.size();
-//    buffer.reset();
-//    buffer.open(QBuffer::WriteOnly);
-//    buffer.setBuffer(&tmpbyte);
-//    buffer.write(tmpbyte);
-
-
 }
 
 void ScreenCap::updateClientProgress(qint64 numBytes)
@@ -285,32 +268,6 @@ int ScreenCap::WithCapthread()
     return RET_SUCESS;
 }
 
-ScreenCap::ScreenCap(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::ScreenCap)
-{
-    ui->setupUi(this);
-    ui->lineEditIp->setStyleSheet("QLineEdit{font: bold italic large \"Times New Roman\";font-size:25px;color:rgb(55,100,255);height:50px;border:4px solid rgb(155,200,33);background-color: rgba(0,0,0,30);border-radius:15px;selection-color:pink}");
-    showVerion();
-    BtnStartPix();
-    connect(ui->lineEditIp,SIGNAL(textChanged(QString)),this,SLOT(textCheck(QString)));
-
-    pCapThread = NULL;
-    TotalBytes = 0;
-    byteWritten = 0;
-    bytesToWrite = 0;
-    picNametime = 1;
-    loadSize = 4*1024;     // 4Kb
-//    loadSize = 10*1024;     // 10Kb
-    sendDoneFlag = SEND_DONE;
-
-//    QDataStream sendOut(&outBlock, QIODevice::WriteOnly);
-//    sendOut.setVersion(QDataStream::Qt_4_3);
-
-    //定时网络发送
-    TimerSets();
-}
-
 
 void ScreenCap::TimerSets()
 {
@@ -347,6 +304,8 @@ void ScreenCap::NetSend()
 
         sendDoneFlag = SEND_DONE;
     }
+//    qDebug() << "~~~arrayNetData count:" <<pCapThread->arrayNetData.count();
+    qDebug() << "~~~arrayNetSize count:" <<pCapThread->arrayNetSize.count();
 
 }
 
