@@ -1,3 +1,18 @@
+/************************************************/
+/*声 明:  @db.com                                */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*功 能:用于捕屏的初始化，捕屏进程创建，网络传输         */
+/*author :wxj                                    */
+/*email  :wxjlmr@126.com                         */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+/*更新记录:                                        */
+/*                                                */
+/*************************************************/
 #include "screencap.h"
 #include "ui_screencap.h"
 #include "version.h"
@@ -8,17 +23,30 @@
 #include <windows.h>
 #include "capthread.h"
 
-int ScreenCap::isStarted = STAT_STOPPED;
+#define NO_FIRST 1
 
+int ScreenCap::isStarted = STAT_STOPPED;
+unsigned int ScreenCap::mNo = NO_FIRST;
+
+/************************************************/
+/*函 数:ScreenCap                                */
+/*入 参:parent-父类                               */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:界面、变量、定时器初始化、版本显示              */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 ScreenCap::ScreenCap(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ScreenCap)
 {
     ui->setupUi(this);
     ui->lineEditIp->setStyleSheet("QLineEdit{font: bold italic large \"Times New Roman\";font-size:25px;color:rgb(55,100,255);height:50px;border:4px solid rgb(155,200,33);background-color: rgba(0,0,0,30);border-radius:15px;selection-color:pink}");
-    showVerion();
+    showAppVerion();
     BtnStartPix();
-    connect(ui->lineEditIp,SIGNAL(textChanged(QString)),this,SLOT(textCheck(QString)));
+    connect(ui->lineEditIp,SIGNAL(textChanged(QString)),this,SLOT(LineTextTips(QString)));
 
     pCapThread = NULL;
     TotalBytes = 0;
@@ -33,10 +61,19 @@ ScreenCap::ScreenCap(QWidget *parent) :
     TimerSets();
 }
 
-
+/************************************************/
+/*函 数:WithNetworkInit                          */
+/*入 参:ipaddr-IP地址                             */
+/*出 参:无                                        */
+/*返 回:RET_SUCESS-成功，RET_FAIL-失败              */
+/*功 能:网络传输初始化，检测IP地址，连接远程IP地址       */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 int ScreenCap::WithNetworkInit(QString ipaddr)
 {
-    if(RET_SUCESS != CheckIPAddr(ipaddr))
+    if(RET_SUCESS != CheckIPAddrValid(ipaddr))
     {
         return RET_FAIL;
     }
@@ -50,7 +87,7 @@ int ScreenCap::WithNetworkInit(QString ipaddr)
         return RET_FAIL;
 
     connect(p_tcpClient,SIGNAL(error(QAbstractSocket::SocketError)),this,
-            SLOT(displayErr(QAbstractSocket::SocketError)));
+            SLOT(displayNetErr(QAbstractSocket::SocketError)));
 //    connect(p_tcpClient,SIGNAL(bytesWritten(qint64)),this,
 //            SLOT(updateClientProgress(qint64)));
     p_tcpClient->connectToHost(ipaddr,
@@ -77,8 +114,17 @@ int ScreenCap::WithNetworkInit(QString ipaddr)
     return RET_SUCESS;
 }
 
-
-void ScreenCap::displayErr(QAbstractSocket::SocketError socketError)
+/************************************************/
+/*函 数:displayNetErr                            */
+/*入 参:socketError-socket各种错误                 */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:网络各种错误情况处理                         */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
 {
     qDebug() << "display err";
     if(NULL == p_tcpClient)
@@ -93,15 +139,34 @@ void ScreenCap::displayErr(QAbstractSocket::SocketError socketError)
 
     if(NULL != p_tcpClient)
     {
+        emit emitCtrlPthreadQuit();
         p_tcpClient->abort();
-        p_tcpClient->waitForDisconnected();
+        p_tcpClient->waitForDisconnected(3000);
         p_tcpClient->disconnectFromHost();
         p_tcpClient->close();
+
+        pNetSendTimer->stop();
+        pCapThread->arrayNetData.clear();
+        pCapThread->arrayNetSize.clear();
+        isStarted == STAT_STOPPED;
+        StopActionSets();
+        mNo = NO_FIRST;
         p_tcpClient->deleteLater();
-        p_tcpClient = NULL;
+
+//        p_tcpClient = NULL;
     }
 }
 
+/************************************************/
+/*函 数:writeNetData                             */
+/*入 参:iData-待传输的字节                         */
+/*出 参:无                                        */
+/*返 回:传递成功的数据字节长度                       */
+/*功 能:传递网络数据                               */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 qint64 ScreenCap::writeNetData(const QByteArray &iData)
 {
     qint64 len = p_tcpClient->write(iData);
@@ -113,6 +178,17 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
     return(len);
 }
 
+/************************************************/
+/*函 数:MergeMessage                             */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:组合报文，包括数据总长度，头长度，头内容和数据内容 */
+/*     同时将头内容发送出去                          */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::MergeMessage()
 {
 
@@ -156,6 +232,16 @@ void ScreenCap::MergeMessage()
     qDebug() << "-->outBlkData size :" << outBlkData.size();
 }
 
+/************************************************/
+/*函 数:updateClientProgress                     */
+/*入 参:numBytes-传递的字节数                      */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:更新客户侧传递的进度条                        */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::updateClientProgress(qint64 numBytes)
 {
 //#ifdef DEBUG
@@ -232,52 +318,72 @@ void ScreenCap::updateClientProgress(qint64 numBytes)
 //#endif
 }
 
-
-int ScreenCap::WithCapthread()
+/************************************************/
+/*函 数:CreateCapturethread                      */
+/*入 参:numBytes-传递的字节数                      */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:创建捕屏线程，默认捕捉全屏，发送信号控制是否捕屏  */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+int ScreenCap::CreateCapturethread()
 {
     int ret = RET_SUCESS;
     int w = QApplication::desktop()->width();
     int h = QApplication::desktop()->height();
-    printf("screen rect,w:%d h:%d\n", w, h);
+    qDebug("screen rect,w:%d h:%d\n", w, h);
 
     QString textIp = ui->lineEditIp->text();
 
     if(RET_SUCESS != WithNetworkInit(textIp))
     {
-        qDebug() << "CapThread create RET_FAIL!!";
+        qDebug("CapThread create RET_FAIL!!\n");
         return RET_FAIL;
     }
 
-
-
-    pCapThread = new CapThread(&ret,w, h,textIp);
-    if(RET_SUCESS != ret)
-    {
-        qDebug() << "pCapThread create failed";
-        return RET_FAIL;
-    }
-
+    pCapThread = new CapThread(w, h, NULL);
     qDebug() << "pCapThread start addr:" << pCapThread;
     //ctrl pthread  of capthread
     connect(this,SIGNAL(emitCtrlPthreadStart()),pCapThread,
             SLOT(SetStartThread()));
     connect(this,SIGNAL(emitCtrlPthreadStop()),pCapThread,
             SLOT(SetStopThread()));
-
+    connect(this,SIGNAL(emitCtrlPthreadQuit()),pCapThread,
+            SLOT(SetQuitThread()));
 
     return RET_SUCESS;
 }
 
-
+/************************************************/
+/*函 数:TimerSets                                */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:定时器集，包括（发送网络数据）                 */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::TimerSets()
 {
-    ptnettimer = new QTimer();
-    connect(ptnettimer,SIGNAL(timeout()),this,SLOT(NetSend()));
-    ptnettimer->start(40);
+    pNetSendTimer = new QTimer();
+    connect(pNetSendTimer,SIGNAL(timeout()),this,SLOT(NetSendData()));
+    pNetSendTimer->start(40);
 }
 
-
-void ScreenCap::NetSend()
+/************************************************/
+/*函 数:NetSendData                              */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:网络数据发送槽函数                           */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::NetSendData()
 {
     if(NULL == pCapThread)
     {
@@ -309,50 +415,46 @@ void ScreenCap::NetSend()
 
 }
 
-
-
-
-void ScreenCap::showVerion(void)
+/************************************************/
+/*函 数:StopActionSets                           */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:停止传输处理函数集合                          */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::StopActionSets()
 {
-    QString verinfo = QString::fromLocal8Bit("录屏传输 ") +
-            QString::fromLocal8Bit(ScreenCapVersion) +
-            QString::fromLocal8Bit("，点击开始传输 ");
-    ui->statusBar->showMessage(verinfo);
+    qDebug() << " stop!!";
+    BtnStartPix();
+    BtnDisable();
+    showTextTransferOver();
+
+    //停止传输
+    StopCapScreen();
+
+    BtnEnable();
 }
 
-
-void ScreenCap::showText_ClickToStart(void)
-{
-    QString verinfo = QString::fromLocal8Bit("点击开始传输 ");
-    ui->statusBar->showMessage(verinfo);
-}
-
-void ScreenCap::showText_Connecting(void)
-{
-    QString verinfo = QString::fromLocal8Bit("连接中...，请等待 ");
-    ui->statusBar->showMessage(verinfo);
-}
-
-
-/*
-刚开始并未进入此按钮中
-第一次点击时，默认进入停止按钮，设置为传输中...
-第二次点击时，进入开始按钮，设置为传输结束
-*/
+/************************************************/
+/*函 数:on_pushButtonStart_clicked               */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:开始/停止按钮动作，                          */
+/*     第一次点击时，默认进入停止按钮，设置为传输中...   */
+/*     第二次点击时，进入开始按钮，设置为传输结束        */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::on_pushButtonStart_clicked()
 {
-    static unsigned int mNo = 1;
     if(0 == ((mNo++)%2)) /* 传输结束 */
     {
-        qDebug() << " stop!!";
-        BtnStartPix();
-        BtnDisable();
-        showTextStop();
-
-        //停止传输
-        StopCapScreen();
-
-        BtnEnable();
+        StopActionSets();
     }
     else /* 开始传输 */
     {
@@ -360,32 +462,61 @@ void ScreenCap::on_pushButtonStart_clicked()
         BtnStopPix();//显示停止图片
 
         //开始传输
-        if(STAT_STOPPED == StartCapScreen())//建立连接
+        if(STAT_STOPPED == CaptureScreenOn())//建立连接
         {
             BtnStartPix();//显示开始图片
-            showText_ClickToStart();//显示点击传输
-            mNo = 1;//
+            showTextClickToStart();//显示点击传输
+            mNo = NO_FIRST;//
         }else
         {
-            showTextStart();//连接成功
+            showTextTransfering();//连接成功
         }
 
     }
 }
 
+/************************************************/
+/*函 数:BtnStartPix                              */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:开始图片显示及样式                           */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::BtnStartPix(void)
 {
     QString str = ":images/start.png";
     BtnSetPix(str);
 }
 
+/************************************************/
+/*函 数:BtnStopPix                               */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:停止图片显示及样式                           */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::BtnStopPix(void)
 {
     QString str = ":images/stop.png";
     BtnSetPix(str);
 }
 
-
+/************************************************/
+/*函 数:BtnSetPix                                */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:图片显示及样式                              */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::BtnSetPix(QString str)
 {
 #define PNGSIZEDIV 1
@@ -395,23 +526,52 @@ void ScreenCap::BtnSetPix(QString str)
     ui->pushButtonStart->setIconSize(QSize(mypixmap.width()/PNGSIZEDIV,mypixmap.height()/PNGSIZEDIV));
 }
 
+/************************************************/
+/*函 数:BtnEnable                                */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:按钮使能                                   */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::BtnEnable(void)
 {
     ui->pushButtonStart->setEnabled(TRUE);
 }
 
+/************************************************/
+/*函 数:BtnDisable                                */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:按钮禁止使能                                */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::BtnDisable(void)
 {
     ui->pushButtonStart->setEnabled(FALSE);
 }
 
-//开始传输
-int ScreenCap::StartCapScreen()
+/************************************************/
+/*函 数:CaptureScreenOn                          */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:STAT_STARTED-开始，STAT_STOPPED-停止       */
+/*功 能:捕屏开始                                   */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+int ScreenCap::CaptureScreenOn()
 {
-    showText_Connecting();
+    showTextConnecting();
     if(STAT_STOPPED == isStarted)
     {
-        if(RET_SUCESS == WithCapthread())//建立连接并开始抓捕线程
+        if(RET_SUCESS == CreateCapturethread())//建立连接并开始抓捕线程
         {
             if(pCapThread)
                 pCapThread->start();
@@ -431,14 +591,32 @@ int ScreenCap::StartCapScreen()
     return STAT_STARTED;
 }
 
-//停止传输
+/************************************************/
+/*函 数:StopCapScreen                            */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:捕屏停止                                   */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::StopCapScreen()
 {
     emit emitCtrlPthreadStop();
 }
 
-//检测文本变化
-void ScreenCap::textCheck(QString str)
+/************************************************/
+/*函 数:LineTextTips                             */
+/*入 参:str-lineText的文本内容                     */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:文本内容提示，当为空，显示文本显示              */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::LineTextTips(QString str)
 {
     str = str.replace(" ","");
     if(str.isEmpty())
@@ -450,23 +628,62 @@ void ScreenCap::textCheck(QString str)
 
 }
 
+/************************************************/
+/*函 数:showStateBarInfo                         */
+/*入 参:pstr-字符串                               */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:状态栏显示字符串信息                         */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void ScreenCap::showStateBarInfo(const char *pstr)
 {
     ui->statusBar->showMessage(QString::fromLocal8Bit(pstr));
 }
 
-void ScreenCap::showTextStart()
+/************************************************/
+/*函 数:showTextTransfering                      */
+/*入 参:pstr-字符串                               */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:状态栏显示"传输中..."                        */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::showTextTransfering()
 {
     showStateBarInfo("传输中...");
 }
 
-void ScreenCap::showTextStop()
+/************************************************/
+/*函 数:showTextTransferOver                     */
+/*入 参:pstr-字符串                               */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:状态栏显示"传输结束"                         */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::showTextTransferOver()
 {
     showStateBarInfo("传输结束");
 }
 
-
-int ScreenCap::CheckIPAddr(QString ipaddr)
+/************************************************/
+/*函 数:CheckIPAddrValid                         */
+/*入 参:ipaddr-IP地址                             */
+/*出 参:无                                        */
+/*返 回:RET_SUCESS-成功，RET_FAIL-失败             */
+/*功 能:检测IP地址有效性                            */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+int ScreenCap::CheckIPAddrValid(QString ipaddr)
 {
     QRegExp regExp("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
     if(!regExp.exactMatch(ipaddr))
@@ -478,8 +695,66 @@ int ScreenCap::CheckIPAddr(QString ipaddr)
     return RET_SUCESS;
 }
 
+/************************************************/
+/*函 数:showAppVerion                            */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:状态栏显示程序版本                           */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::showAppVerion(void)
+{
+    QString verinfo = QString::fromLocal8Bit("录屏传输 ") +
+            QString::fromLocal8Bit(ScreenCapVersion) +
+            QString::fromLocal8Bit("，点击开始传输 ");
+    ui->statusBar->showMessage(verinfo);
+}
 
+/************************************************/
+/*函 数:showTextClickToStart                     */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:状态栏显示  "点击开始传输 "                   */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::showTextClickToStart(void)
+{
+    QString verinfo = QString::fromLocal8Bit("点击开始传输 ");
+    ui->statusBar->showMessage(verinfo);
+}
 
+/************************************************/
+/*函 数:showTextConnecting                       */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:状态栏显示"连接中...，请等待 "                */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::showTextConnecting(void)
+{
+    QString verinfo = QString::fromLocal8Bit("连接中...，请等待 ");
+    ui->statusBar->showMessage(verinfo);
+}
+
+/************************************************/
+/*函 数:~ScreenCap                               */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:析构函数                                   */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 ScreenCap::~ScreenCap()
 {
     if((NULL != pCapThread)&&(STAT_STARTED == ScreenCap::isStarted))

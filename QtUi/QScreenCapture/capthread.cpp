@@ -1,3 +1,18 @@
+/************************************************/
+/*声 明:  @db.com                                */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*功 能:捕屏线程                                   */
+/*author :wxj                                    */
+/*email  :wxjlmr@126.com                         */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+/*更新记录:                                        */
+/*                                                */
+/*************************************************/
 /**
  * 最简单的基于FFmpeg的AVDevice例子（屏幕录制）
  * Simplest FFmpeg Device (Screen Capture)
@@ -45,6 +60,16 @@
 
 int thread_exit=0;
 
+/************************************************/
+/*函 数:sfp_refresh_thread                       */
+/*入 参:opaque-忽略                               */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:向SDL中推送刷新事件，间隔40ms                */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 int sfp_refresh_thread(void *opaque)
 {
     while (thread_exit==0) {
@@ -57,6 +82,16 @@ int sfp_refresh_thread(void *opaque)
     return 0;
 }
 
+/************************************************/
+/*函 数:sendSDLQuit                              */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:向SDL中推送退出事件                          */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void CapThread::sendSDLQuit()
 {
     SDL_Event event;
@@ -65,7 +100,16 @@ void CapThread::sendSDLQuit()
     SDL_Delay(40);
 }
 
-//Show Dshow Device
+/************************************************/
+/*函 数:show_dshow_device                        */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:directShow设备列表                         */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void CapThread::show_dshow_device()
 {
     AVFormatContext *pFormatCtx = avformat_alloc_context();
@@ -77,7 +121,16 @@ void CapThread::show_dshow_device()
     printf("================================\n");
 }
 
-//Show AVFoundation Device
+/************************************************/
+/*函 数:show_avfoundation_device                 */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:Show AVFoundation Device                  */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
 void CapThread::show_avfoundation_device()
 {
     AVFormatContext *pFormatCtx = avformat_alloc_context();
@@ -89,13 +142,19 @@ void CapThread::show_avfoundation_device()
     printf("=============================\n");
 }
 
-
-
-CapThread::CapThread(int* retInt,int width, int height,QString textIp, QObject *parent)
+/************************************************/
+/*函 数:CapThread                                */
+/*入 参:width-分辨率宽度，height-分辨度高度，parent-父类*/
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:捕屏线程构造函数                             */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+CapThread::CapThread(int width, int height,QObject *parent)
     : QThread(parent)
 {
-    qDebug() <<"ip addr:" << textIp;
-
     arrayNetSize.clear();
     arrayNetData.clear();
     m_threadstate = STAT_THREAD_RUNNING;
@@ -344,6 +403,11 @@ void CapThread::run()
         {
             continue;
         }
+        if(STAT_THREAD_QUIT == GetThreadFlag())
+        {
+            qDebug() << "STAT_THREAD_QUIT！！";
+            break;
+        }
         //Wait
         SDL_WaitEvent(&event);
         if(event.type==SFM_REFRESH_EVENT){
@@ -408,7 +472,7 @@ void CapThread::run()
         }
     }
 
-
+    qDebug() << "release STAT_THREAD_QUIT！！";
     //    SDL_KillThread(video_tid);
     //    thread_exit=1;
     sws_freeContext(img_convert_ctx);
@@ -524,4 +588,9 @@ void CapThread::SetStopThread()
 {
     SetThreadFlag(STAT_THREAD_STOPED);
 }
+void CapThread::SetQuitThread()
+{
+    SetThreadFlag(STAT_THREAD_QUIT);
+}
+
 

@@ -1,3 +1,18 @@
+/************************************************/
+/*声 明:  @db.com                                */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*功 能:捕屏线程头文件                              */
+/*author :wxj                                    */
+/*email  :wxjlmr@126.com                         */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+/*更新记录:                                        */
+/*                                                */
+/*************************************************/
 #ifndef CAPTHREAD_H
 #define CAPTHREAD_H
 
@@ -99,7 +114,8 @@ struct AVCodecContext;
 enum
 {
     STAT_THREAD_RUNNING,
-    STAT_THREAD_STOPED
+    STAT_THREAD_STOPED,
+    STAT_THREAD_QUIT
 };
 
 
@@ -122,13 +138,12 @@ class CapThread : public QThread
     Q_OBJECT
 
 public:
-    explicit CapThread(int* retInt,int width, int height,QString textIp, QObject *parent = 0);
+    explicit CapThread(int width,int height, QObject *parent);
     ~CapThread();
     void sendSDLQuit();
     void SetThreadFlag(quint8 flag);
     quint8 GetThreadFlag(void);
     int WithNetworkInit(QString ipaddr);
-    int CheckIPAddr(QString ipaddr);
     int SendPkgData(AVPacket *pkt);
 public:
     void show_dshow_device();
@@ -166,6 +181,7 @@ public slots:
     void capFrame();
     void SetStartThread();
     void SetStopThread();
+    void SetQuitThread();
 //    void displayErr(QAbstractSocket::SocketError socketError);
 //    void updateClientProgress(qint64 numBytes);
 };

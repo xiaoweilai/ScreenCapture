@@ -1,3 +1,18 @@
+/************************************************/
+/*声 明:  @db.com                                */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*XXXXX:                                         */
+/*功 能:用于捕屏的初始化，捕屏进程创建，网络传输头文件    */
+/*author :wxj                                    */
+/*email  :wxjlmr@126.com                         */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+/*更新记录:                                        */
+/*                                                */
+/*************************************************/
 
 #ifndef SCREENCAP_H
 #define SCREENCAP_H
@@ -59,24 +74,25 @@ public:
     void SetThreadFlag(quint8 flag);
     quint8 GetThreadFlag(void);
     CapThread *pCapThread;
-    int WithCapthread();
+    int CreateCapturethread();
 
 private slots:
     void on_pushButtonStart_clicked();
-    void textCheck(QString str);//检测文本变化
+    void LineTextTips(QString str);
+    void StopActionSets();
 private:
-    void showTextStart();
-    void showTextStop();
+    void showTextTransfering();
+    void showTextTransferOver();
     void showStateBarInfo(const char *pstr);
-    void showVerion(void);
-    void showText_ClickToStart(void);
-    void showText_Connecting(void);
+    void showAppVerion(void);
+    void showTextClickToStart(void);
+    void showTextConnecting(void);
     void BtnStartPix(void);
     void BtnStopPix(void);
     void BtnSetPix(QString str);
     void BtnEnable(void);
     void BtnDisable(void);
-    int StartCapScreen();
+    int CaptureScreenOn();
     void StopCapScreen();
 
     /*************[网络传输]**********************/
@@ -84,6 +100,7 @@ private:
 private:
     Ui::ScreenCap *ui;
     static int isStarted;
+    static unsigned int mNo;
 
     /*************[网络传输]**********************/
     QTcpSocket *p_tcpClient;
@@ -93,7 +110,7 @@ private:
     qint64 byteWritten;
     qint64 bytesToWrite;
     quint64 picNametime;
-    QTimer *ptnettimer;
+    QTimer *pNetSendTimer;
     qint64  loadSize;          //被初始化为一个4Kb的常量
     QBuffer buffer;//传输网络数据的一个过程
     QByteArray tmpbyte;//保存网络数据n个的内容
@@ -103,13 +120,15 @@ private:
 signals:
     void emitCtrlPthreadStart();
     void emitCtrlPthreadStop();
+    void emitCtrlPthreadQuit();
+
 
 public slots:
-    int  CheckIPAddr(QString ipaddr);
+    int  CheckIPAddrValid(QString ipaddr);
     int  WithNetworkInit(QString ipaddr);
-    void displayErr(QAbstractSocket::SocketError socketError);
+    void displayNetErr(QAbstractSocket::SocketError socketError);
     void updateClientProgress(qint64 numBytes);
-    void NetSend();
+    void NetSendData();
     void TimerSets();
     void MergeMessage();
 };
