@@ -180,45 +180,49 @@ JNIEXPORT jint JNICALL Java_com_h264player_H264Androidffmpeg_dalDecoder
   (JNIEnv* env, jobject thiz, jbyteArray in, jint nalLen, jbyteArray out)
 {
 
-    if (!frame) {
-        fprintf(stderr, "Could not allocate video frame\n");
-        exit(1);
-    }
-
-    frame_count = 0;
-    for (;;) {
-        avpkt.size = fread(inbuf, 1, INBUF_SIZE, f);
-        if (avpkt.size == 0)
-            break;
-
-        /* NOTE1: some codecs are stream based (mpegvideo, mpegaudio)
-           and this is the only method to use them because you cannot
-           know the compressed data size before analysing it.
-
-           BUT some other codecs (msmpeg4, mpeg4) are inherently frame
-           based, so you must call them with all the data for one
-           frame exactly. You must also initialize 'width' and
-           'height' before initializing them. */
-
-        /* NOTE2: some codecs allow the raw parameters (frame size,
-           sample rate) to be changed at any frame. We handle this, so
-           you should also take care of it */
-
-        /* here, we use a stream based decoder (mpeg1video), so we
-           feed decoder and see if it could decode a frame */
-        avpkt.data = inbuf;
-        while (avpkt.size > 0)
-            if (decode_write_frame(out, c, frame, &frame_count, &avpkt, 0) < 0)
-                exit(1);
-    }
-
-    /* some codecs, such as MPEG, transmit the I and P frame with a
-       latency of one frame. You must do the following to have a
-       chance to get the last frame of the video */
-    avpkt.data = NULL;
-    avpkt.size = 0;
-    int consumed_bytes = decode_write_frame(out, c, frame, &frame_count, &avpkt, 1);
-
+//    if (!frame) {
+//        fprintf(stderr, "Could not allocate video frame\n");
+//        exit(1);
+//    }
+//
+//    frame_count = 0;
+//    for (;;) {
+//        avpkt.size = fread(inbuf, 1, INBUF_SIZE, f);
+//        if (avpkt.size == 0)
+//            break;
+//
+//        /* NOTE1: some codecs are stream based (mpegvideo, mpegaudio)
+//           and this is the only method to use them because you cannot
+//           know the compressed data size before analysing it.
+//
+//           BUT some other codecs (msmpeg4, mpeg4) are inherently frame
+//           based, so you must call them with all the data for one
+//           frame exactly. You must also initialize 'width' and
+//           'height' before initializing them. */
+//
+//        /* NOTE2: some codecs allow the raw parameters (frame size,
+//           sample rate) to be changed at any frame. We handle this, so
+//           you should also take care of it */
+//
+//        /* here, we use a stream based decoder (mpeg1video), so we
+//           feed decoder and see if it could decode a frame */
+//        avpkt.data = inbuf;
+////        while (avpkt.size > 0)
+////            if (decode_write_frame(out, c, frame, &frame_count, &avpkt, 0) < 0)
+////                exit(1);
+//    }
+//
+//    /* some codecs, such as MPEG, transmit the I and P frame with a
+//       latency of one frame. You must do the following to have a
+//       chance to get the last frame of the video */
+//    avpkt.data = NULL;
+//    avpkt.size = 0;
+//    int consumed_bytes = decode_write_frame(out, c, frame, &frame_count, &avpkt, 1);
+    int consumed_bytes =10;
+    int i= 0;
+//    for(i;i<10;i++){
+    	out = in;
+//    }
 	return consumed_bytes;
 }
 

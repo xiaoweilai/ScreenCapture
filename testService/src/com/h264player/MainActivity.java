@@ -49,13 +49,14 @@ public class MainActivity extends Activity implements View.OnClickListener{
 	private MyAPP mAPP = null; 
 	private Thread receiveImag;
 	
-//	H264Android h264;
-//	long decoder;
+	H264Androidffmpeg h264;
+	long decoder;
 	private int screenWidth = 1920;
 	private int screenHeight = 1080;
 	byte[] mPixel = new byte[screenWidth * screenHeight*4];
 	ByteBuffer buffer = ByteBuffer.wrap(mPixel);
-	private int packageHead = 0xFFFEFFFE;
+	private long packageHead = 0x00000000FFFEFFFEL;
+	byte bytes = 0x40;
 	
 	@SuppressLint("NewApi")
 	@Override
@@ -85,13 +86,20 @@ public class MainActivity extends Activity implements View.OnClickListener{
 			}
 		});
 		
-//		h264 = new H264Android();
-//		decoder =  h264.initDecoder(screenWidth,screenHeight);
+		h264 = new H264Androidffmpeg();
+		decoder =  h264.initDecoder(screenWidth,screenHeight);
 		int i = mPixel.length;
 		for (i = 0; i < mPixel.length; i++) {
 			mPixel[i] = (byte) 0x00;
 		}
 		
+//		mCopyByteMessage = new byte[20];
+//		
+//		for(i = 0;i<20;i++){
+//    		mCopyByteMessage[i] = (byte) i;
+//    	}
+//    	int resout = h264.dalDecoder(mCopyByteMessage, mCopyByteMessage.length, mPixel);
+    	
 		setIpAddress();
 		try{
 			SocketServer();
@@ -179,27 +187,27 @@ public class MainActivity extends Activity implements View.OnClickListener{
 		         //用于接收客户端发来的数据的输入流
 		         mDis = new DataInputStream(mSocket.getInputStream());
 		         while(!mReceiveSuccessedFlag){
-//		        	 try{ 
-//			        	 mSocket.sendUrgentData(0xFF); 
-//			        	 }catch(Exception ex){ 
-//			        		 System.out.println("线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
-//			        		 try {
-//			     				if (null != mDis)
-//			     					mDis.close();
-//			     				if (null != mDos)
-//			     					mDos.close();
-//			     				if (null != ss){
-//			     					ss.close();
-//			     				}
-//			     			} catch (IOException ee) {
-//			     				ee.printStackTrace();
-//			     			}
-//			     			mHandler.sendEmptyMessage(6);
-//			     			receiveImag.interrupt();
-//			     			receiveImag = null;
-//			     			mReceiveSuccessedFlag = true;
-//			     			break;
-//			        	 }
+		        	 try{ 
+			        	 mSocket.sendUrgentData(0xFF); 
+			        	 }catch(Exception ex){ 
+			        		 System.out.println("线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
+			        		 try {
+			     				if (null != mDis)
+			     					mDis.close();
+			     				if (null != mDos)
+			     					mDos.close();
+			     				if (null != ss){
+			     					ss.close();
+			     				}
+			     			} catch (IOException ee) {
+			     				ee.printStackTrace();
+			     			}
+			     			mHandler.sendEmptyMessage(6);
+			     			receiveImag.interrupt();
+			     			receiveImag = null;
+			     			mReceiveSuccessedFlag = true;
+			     			break;
+			        	 }
 		        	 receiveMessage(mDis,mSocket,mDos);
 	        	 }
 			} catch (IOException e) {
@@ -226,8 +234,10 @@ public class MainActivity extends Activity implements View.OnClickListener{
 			
 		}
 	};
-
 	
+	long tempTotalSize = 0;
+	long readPackageHead = 0;
+	long readPackageContent = 0;
 public void receiveMessage(DataInputStream input, Socket s, DataOutputStream output) throws SocketException{
 		
 		int numRead = 0;
@@ -235,19 +245,13 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 			int tempBytelength = input.available();
 			if(!mReceiveSuccessedBeforeFourByteFlag){
 	            if(tempBytelength >= 100){
-//	            	long tempSize = input.readLong();
-	            	int readPackageHead = input.readInt();
-	            	
-	            	if(packageHead != readPackageHead){
+	            	tempTotalSize = input.readLong();
+	            	readPackageHead = input.readLong();
+	            	readPackageContent = input.readLong();
+	            	if(readPackageHead != 8 || readPackageContent != packageHead){
 	            		return;
 	            	}
-	            	long packageSize = input.readLong();
-	            	
-	            	mCurImageSize = (int)packageSize;
-//	            	mCurImageNameLength = (int)input.readLong();
-//	            	mGetImageNameByte = new byte[mCurImageNameLength];
-//	            	int name = input.read(mGetImageNameByte, 0, mCurImageNameLength);
-//	            	mCurImageSize = mCurImageSize - 8 - 8 -mCurImageNameLength;
+	            	mCurImageSize = (int)tempTotalSize - 24;
 	            	mGetByteMessage = new byte[mCurImageSize];
 	            	mReceiveSuccessedBeforeFourByteFlag = true;
 	            }
@@ -258,6 +262,9 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 						mByteLong += numRead;
 						return;
 					} else if(mByteLong >= mCurImageSize){
+//						PublicFunction.writeFile(mContext, "savefilelog.txt", "TotalBytes:" + tempTotalSize +"\n");
+//						PublicFunction.writeFile(mContext, "savefilelog.txt", "TotalBytes:" + tempTotalSize);
+//						PublicFunction.writeFile(mContext, System.currentTimeMillis()+"file.txt", mGetByteMessage);
 						mByteLong = 0;
 						mCurImageSize = 0;
 						mCurImageNameLength = 0;
@@ -267,9 +274,7 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 						mHandler.sendMessage(msg);
 						mReceiveSuccessedBeforeFourByteFlag = false;
 						
-					}else{
-//						 System.out.println("numRead not read all" + numRead);
-				}
+					}
 			}
 		} catch (IOException e) {
 			Log.writeErroLogToFile("socket input output异常"
@@ -312,7 +317,10 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 	            		mCopyByteMessage = new byte[mGetByteMessage.length];
 	            		mCopyByteMessage = mGetByteMessage.clone();
 					}
-//	            	int resout = h264.dalDecoder(mCopyByteMessage, mCopyByteMessage.length, mPixel);
+	            	for(int i = 0;i<20;i++){
+	            		mCopyByteMessage[i] = (byte) i;
+	            	}
+	            	int resout = h264.dalDecoder(mCopyByteMessage, mCopyByteMessage.length, mPixel);
 					mImgBitmapShow = PublicFunction.bytesToBimap(mPixel);
 					if(mImgBitmapShow != null){
 						mImgLcd.setImageBitmap(mImgBitmapShow);
