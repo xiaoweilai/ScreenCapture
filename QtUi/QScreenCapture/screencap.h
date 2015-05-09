@@ -31,6 +31,7 @@ extern "C"{
 #include <QMainWindow>
 #include <capthread.h>
 #include <QBuffer>
+#include <QFile>
 #include <stdio.h>
 #include <stdint.h>
 //Windows
@@ -56,6 +57,9 @@ enum{
     SEND_DONE,
     SEND_UNKNOWN
 };
+
+//是否保存LOG信息到文件
+#define SC_LOG
 
 
 namespace Ui {
@@ -118,6 +122,14 @@ private:
     QByteArray tmpbyte;//保存网络数据n个的内容
     quint8 sendDoneFlag;//数据是否发生完毕
 
+
+    /*************[保存log]**********************/
+    QFile *pFile;
+    QString filename;
+
+private:
+    void LogInitLog();
+    void LogWriteFile(QString str);
 
 signals:
     void emitCtrlPthreadStart();

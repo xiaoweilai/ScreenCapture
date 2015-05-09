@@ -403,23 +403,17 @@ void CapThread::run()
 {
     //Event Loop
     SDL_Event event;
-
     //    qtime计算时间，耗时
     QTime time;
     time.start(); //开始计时，以ms为单位
     static float time_total = 0.0;
-
-
 
     while(1)
     {
         int time_Diff = time.elapsed(); //返回从上次start()或restart()开始以来的时间差，单位ms
         //以下方法是将ms转为s
         float f = time_Diff / 1000.0;
-        time_total += f;
-
-        //    qDebug() << "time elaspe:" <<time_Diff <<"ms";
-        qDebug() << "Total time elaspe:" <<time_total <<"s";
+        qDebug() << "Total time elaspe:" <<f <<"s";
 
         if(STAT_THREAD_STOPED == GetThreadFlag())
         {
@@ -492,11 +486,13 @@ void CapThread::run()
                 }
                 av_free_packet(pkt);
             }else{
+                qDebug() << "Exit ThreadExit ThreadExit Thread!";
                 //Exit Thread
                 thread_exit=1;
                 break;
             }
         }else if(event.type==SDL_QUIT){
+            qDebug() << "Receive SDL_QUIT!";
             thread_exit=1;
             break;
         }

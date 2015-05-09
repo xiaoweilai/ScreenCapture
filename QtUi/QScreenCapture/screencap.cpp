@@ -60,6 +60,62 @@ ScreenCap::ScreenCap(QWidget *parent) :
 
     //定时网络发送
     TimerSets();
+    //保存log信息初始化
+    LogInitLog();
+}
+
+
+/************************************************/
+/*函 数:LogInitLog                               */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:保存log信息                                */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::LogInitLog()
+{
+#ifdef SC_LOG
+    QDate date;
+    QTime time;
+    filename = date.currentDate().toString("sclogyyyy-MM-dd");
+    filename += time.currentTime().toString("_HH-mm-ss");
+    filename +=".log";
+    pFile = new QFile(filename);
+    if(!pFile)
+    {
+        qDebug() <<"Open file Err:" << filename;
+        return ;
+    }
+
+
+    LogWriteFile("\nTcpWrite NetData Log!!\n==============>>>>Starting:\n");
+    qDebug() <<"Log file:" << filename;
+#endif
+}
+
+/************************************************/
+/*函 数:LogWriteFile                              */
+/*入 参:str-写入log的数据                           */
+/*出 参:无                                        */
+/*返 回:                                          */
+/*功 能:将str写入文件                              */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::LogWriteFile(QString str)
+{
+#ifdef SC_LOG
+    if(pFile)
+    {
+        pFile->open(QIODevice::Append);
+        pFile->write(str.toLocal8Bit());
+        pFile->close();
+    }
+#endif
 }
 
 /************************************************/
@@ -168,20 +224,32 @@ QString ScreenCap::getSockState(QAbstractSocket::SocketState state)
 void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
 {
     qDebug() << "Display err!";
+    LogWriteFile("Display err!");
     if(p_tcpClient)
     {
+        QString timeInfo = QString::fromLocal8Bit("\n-->>N:%1,T:%2%3\n").arg(picNametime).arg(QDate::currentDate().toString("yyyyMMdd")).arg(QTime::currentTime().toString("HHmmss"));
+        LogWriteFile(timeInfo);
+
         //qDebug("State      :%d",p_tcpClient->state());
         qDebug("State      :%s",getSockState(p_tcpClient->state()).toLocal8Bit().data());  // State: 3（ConnectedState）正确
         qDebug("socketError:%s",p_tcpClient->errorString().toLocal8Bit().data());  // socketError:
         qDebug("socketError:%d",socketError);
 
+        LogWriteFile(QString::fromLocal8Bit("State:%1").arg(getSockState(p_tcpClient->state())));
+        LogWriteFile(QString::fromLocal8Bit("socketError:%1").arg(p_tcpClient->errorString()));
+        LogWriteFile(QString::fromLocal8Bit("socketError:%1").arg(socketError));
     }
+//写log
+
+
+
     //未连接出现的死程序问题
     if((STAT_STOPPED == isStarted) || (STAT_RESTOP == isStarted))
     {
         return;
     }
 
+#if 0
     //服务端被拒绝，停止传输
     //客户端无法写数据
     /*
@@ -192,8 +260,10 @@ void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
             ||(QAbstractSocket::RemoteHostClosedError == socketError)
             ||(QAbstractSocket::DatagramTooLargeError == socketError))
     {
-        emitCtrlPthreadStop();//发送停止抓屏蔽和传输
-        Sleep(1000);
+#endif
+        //异常，直接关闭传输
+        emitCtrlPthreadStop();//发送停止抓屏蔽和传输,抓屏程序在休息
+//        Sleep(1000);
         pNetSendTimer->stop();
         pCapThread->arrayNetData.clear();
         pCapThread->arrayNetSize.clear();
@@ -205,34 +275,9 @@ void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
         qDebug() << " isStarted:" << isStarted;
         StopActionSets();
         mNo = NO_FIRST;
+#if 0
     }
-//    //客户端无法写数据
-//    /*
-//State      :ConnectedState
-//socketError:Unable to write
-//socketError:7
-//*/
-//    qDebug() << "Net bytesAvailable:"<< p_tcpClient->bytesAvailable();
-//    if((QAbstractSocket::DatagramTooLargeError == socketError))
-//    {
-
-//        qDebug() << "socketError:Unable to write!!";
-
-//        emitCtrlPthreadStop();//发送停止抓屏蔽和传输,抓屏程序在休息
-//        Sleep(1000);
-//        pNetSendTimer->stop();
-//        pCapThread->arrayNetData.clear();
-//        pCapThread->arrayNetSize.clear();
-
-//        p_tcpClient->close();
-
-
-//        isStarted == STAT_RESTOP;
-//        qDebug() << " isStarted:" << isStarted;
-//        StopActionSets();
-//        mNo = NO_FIRST;
-//    }
-
+#endif
 
     isStarted = STAT_RESTOP;
     qDebug() << " isStarted:" << isStarted;
@@ -241,6 +286,7 @@ void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
     {
         QMessageBox::information(NULL,str_china("网络"),
                                  str_china("连接失败，请检查网络连接！"),NULL,NULL);
+        LogWriteFile(QString::fromLocal8Bit("连接失败，请检查网络连接！"));
     }else{
 #if 0
         QMessageBox::information(NULL,str_china("网络"),
@@ -249,6 +295,7 @@ void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
 #else
         QMessageBox::information(NULL,str_china("网络"),
                                  str_china("网络中断，请检查网络连接！"),NULL,NULL);
+        LogWriteFile(QString::fromLocal8Bit("网络中断，请检查网络连接！"));
 #endif
     }
 
@@ -276,6 +323,14 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
 
 //    qDebug() << "To writeData len:" << iData.size();
 //    qDebug() << "writtenData len:" << len;
+    QString idateInfo = QString::fromLocal8Bit("To writeData len:%1\n").arg(iData.size());
+    QString writtendateinfo = QString::fromLocal8Bit("writtenData len:%1\n").arg(len);
+
+#ifdef SC_LOG
+    LogWriteFile(idateInfo);
+    LogWriteFile(writtendateinfo);
+#endif
+
     if(len != iData.size())
     {
         qDebug() << "Data not same!!";
@@ -325,10 +380,15 @@ void ScreenCap::MergeMessage()
     //    qDebug() << "header size:" << qint64((outBlock.size() - sizeof(qint64) * 2));
     //填写实际的总长度和头长度
     sendOut << TotalBytes << qint64((outBlock.size() - sizeof(qint64) * 2));
+
+    QString HeaderInfo = QString::fromLocal8Bit("\n-->>N:%1,T:%2%3\n").arg(picNametime).arg(QDate::currentDate().toString("yyyyMMdd")).arg(QTime::currentTime().toString("HHmmss"));
+    LogWriteFile(HeaderInfo);
+    QString TotalBytesInfo = QString::fromLocal8Bit("TotalBytes:%1\n").arg(TotalBytes);
+    LogWriteFile(TotalBytesInfo);
+
     //将头发送出去，并计算剩余的数据长度，即数据内容长度(n)
     qint64 len = writeNetData(outBlock);
-//    qDebug() << "to write Header len:" << outBlock.size();
-//    qDebug() << "written Header len:" << len;
+
 
     if(len != outBlock.size())
     {
@@ -346,6 +406,8 @@ void ScreenCap::MergeMessage()
     writeNetData(outBlkData);
 
     qDebug() << "-->outBlkData size :" << outBlkData.size();
+
+    picNametime++;//发送次数
 }
 
 /************************************************/
@@ -484,11 +546,11 @@ int ScreenCap::CreateCapturethread()
     qDebug() << "pCapThread start addr:" << pCapThread;
     //ctrl pthread  of capthread
     connect(this,SIGNAL(emitCtrlPthreadStart()),pCapThread,
-            SLOT(SetStartThread()));
+            SLOT(SetStartThread()),Qt::QueuedConnection);
     connect(this,SIGNAL(emitCtrlPthreadStop()),pCapThread,
-            SLOT(SetStopThread()));
+            SLOT(SetStopThread()),Qt::QueuedConnection);
     connect(this,SIGNAL(emitCtrlPthreadQuit()),pCapThread,
-            SLOT(SetQuitThread()));
+            SLOT(SetQuitThread()),Qt::QueuedConnection);
 
     return RET_SUCESS;
 }
