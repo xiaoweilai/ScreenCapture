@@ -100,6 +100,7 @@ extern "C"
 #define AUDIO_REFILL_THRESH 4096
 #define DEFAULT_PORT   "16689"
 
+//是否调试
 #ifndef DEBUG
 #define DEBUG
 #endif
@@ -130,6 +131,8 @@ enum
 {
     STAT_STARTED,
     STAT_STOPPED,
+    STAT_RESTART,/* 重新启动连接 */
+    STAT_RESTOP, /* 需要重新启动连接 */
     STAT_UNKNOWN
 };
 

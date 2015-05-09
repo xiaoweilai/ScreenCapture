@@ -75,6 +75,7 @@ public:
     quint8 GetThreadFlag(void);
     CapThread *pCapThread;
     int CreateCapturethread();
+    int CreateTcpSocket();
 
 private slots:
     void on_pushButtonStart_clicked();
@@ -86,6 +87,7 @@ private:
     void showStateBarInfo(const char *pstr);
     void showAppVerion(void);
     void showTextClickToStart(void);
+    void showTextClickOverToReStart(void);
     void showTextConnecting(void);
     void BtnStartPix(void);
     void BtnStopPix(void);
@@ -127,6 +129,7 @@ public slots:
     int  CheckIPAddrValid(QString ipaddr);
     int  WithNetworkInit(QString ipaddr);
     void displayNetErr(QAbstractSocket::SocketError socketError);
+    QString getSockState(QAbstractSocket::SocketState state);
     void updateClientProgress(qint64 numBytes);
     void NetSendData();
     void TimerSets();

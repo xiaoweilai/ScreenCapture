@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'screencap.h'
 **
-** Created: Sat May 9 11:57:23 2015
+** Created: Sat May 9 15:40:25 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,7 +23,7 @@ static const uint qt_meta_data_ScreenCap[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      13,   14, // methods
+      14,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -42,10 +42,11 @@ static const uint qt_meta_data_ScreenCap[] = {
      161,  154,  150,   10, 0x0a,
      187,  154,  150,   10, 0x0a,
      224,  212,   10,   10, 0x0a,
-     277,  268,   10,   10, 0x0a,
-     306,   10,   10,   10, 0x0a,
-     320,   10,   10,   10, 0x0a,
-     332,   10,   10,   10, 0x0a,
+     282,  276,  268,   10, 0x0a,
+     334,  325,   10,   10, 0x0a,
+     363,   10,   10,   10, 0x0a,
+     377,   10,   10,   10, 0x0a,
+     389,   10,   10,   10, 0x0a,
 
        0        // eod
 };
@@ -58,6 +59,7 @@ static const char qt_meta_stringdata_ScreenCap[] = {
     "int\0ipaddr\0CheckIPAddrValid(QString)\0"
     "WithNetworkInit(QString)\0socketError\0"
     "displayNetErr(QAbstractSocket::SocketError)\0"
+    "QString\0state\0getSockState(QAbstractSocket::SocketState)\0"
     "numBytes\0updateClientProgress(qint64)\0"
     "NetSendData()\0TimerSets()\0MergeMessage()\0"
 };
@@ -79,10 +81,12 @@ void ScreenCap::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         case 7: { int _r = _t->WithNetworkInit((*reinterpret_cast< QString(*)>(_a[1])));
             if (_a[0]) *reinterpret_cast< int*>(_a[0]) = _r; }  break;
         case 8: _t->displayNetErr((*reinterpret_cast< QAbstractSocket::SocketError(*)>(_a[1]))); break;
-        case 9: _t->updateClientProgress((*reinterpret_cast< qint64(*)>(_a[1]))); break;
-        case 10: _t->NetSendData(); break;
-        case 11: _t->TimerSets(); break;
-        case 12: _t->MergeMessage(); break;
+        case 9: { QString _r = _t->getSockState((*reinterpret_cast< QAbstractSocket::SocketState(*)>(_a[1])));
+            if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = _r; }  break;
+        case 10: _t->updateClientProgress((*reinterpret_cast< qint64(*)>(_a[1]))); break;
+        case 11: _t->NetSendData(); break;
+        case 12: _t->TimerSets(); break;
+        case 13: _t->MergeMessage(); break;
         default: ;
         }
     }
@@ -120,9 +124,9 @@ int ScreenCap::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 13)
+        if (_id < 14)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 13;
+        _id -= 14;
     }
     return _id;
 }

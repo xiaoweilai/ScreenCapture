@@ -53,6 +53,7 @@
 #include <QGraphicsItem>
 #include <QMessageBox>
 #include <QRegExp>
+#include <windows.h>
 #include "capthread.h"
 
 
@@ -375,7 +376,11 @@ CapThread::CapThread(int width, int height,QObject *parent)
     }
 #endif
 
+#if  1//with screen
     bmp = SDL_CreateYUVOverlay(pDc->width, pDc->height,SDL_YV12_OVERLAY, screen);
+#else
+    bmp = SDL_CreateYUVOverlay(pDc->width, pDc->height,SDL_YV12_OVERLAY, NULL);
+#endif
 
     rect.x = 0;
     rect.y = 0;
@@ -383,6 +388,7 @@ CapThread::CapThread(int width, int height,QObject *parent)
     rect.h = screen_h;
     //SDL End-----------------------
     //    YCbCr 4:2:0
+    //img_convert_ctx = sws_getContext(pDc->width, pDc->height, pDc->pix_fmt, pDc->width, pDc->height, PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     img_convert_ctx = sws_getContext(pDc->width, pDc->height, pDc->pix_fmt, pDc->width, pDc->height, PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     //------------------------------
     video_tid = SDL_CreateThread(sfp_refresh_thread,NULL);
@@ -398,16 +404,32 @@ void CapThread::run()
     //Event Loop
     SDL_Event event;
 
+    //    qtime计算时间，耗时
+    QTime time;
+    time.start(); //开始计时，以ms为单位
+    static float time_total = 0.0;
+
+
+
     while(1)
     {
+        int time_Diff = time.elapsed(); //返回从上次start()或restart()开始以来的时间差，单位ms
+        //以下方法是将ms转为s
+        float f = time_Diff / 1000.0;
+        time_total += f;
+
+        //    qDebug() << "time elaspe:" <<time_Diff <<"ms";
+        qDebug() << "Total time elaspe:" <<time_total <<"s";
+
         if(STAT_THREAD_STOPED == GetThreadFlag())
         {
-            qDebug() << "STAT_THREAD_STOPED！！";
+            qDebug() << "STAT_THREAD_STOPED!";
+            Sleep(1000);
             continue;
         }
         if(STAT_THREAD_QUIT == GetThreadFlag())
         {
-            qDebug() << "STAT_THREAD_QUIT！！";
+            qDebug() << "STAT_THREAD_QUIT!";
             break;
         }
         //Wait
@@ -415,15 +437,18 @@ void CapThread::run()
         if(event.type==SFM_REFRESH_EVENT){
 
             //------------------------------
-            printf("->>>>>>>>>count:%d\n",execcount++);
+#ifdef DEBUG
+            qDebug("->>>>>>>>>count:%d\n",execcount++);
+#endif
 
             if(av_read_frame(pFormatCtx, pkt)>=0){
                 if(pkt->stream_index==videoindex){
-
-                    printf("->>>>>>>>>pktnum:%d\n",pktnum++);
+#ifdef DEBUG
+                    qDebug("->>>>>>>>>pktnum:%d\n",pktnum++);
+#endif
                     ret = avcodec_decode_video2(pDc, pDframe, &got_picture, pkt);
                     if(ret < 0){
-                        printf("Decode Error.\n");
+                        qDebug("Decode Error.\n");
                         //                        return -1;
                         exit(1);
                     }
@@ -442,7 +467,7 @@ void CapThread::run()
 
                         if (ret < 0)
                         {
-                            printf("Error encoding frame\n");
+                            qDebug("Error encoding frame\n");
                             exit(1);
                         }
 
@@ -450,13 +475,15 @@ void CapThread::run()
                         if (got_output)
                         {
                             SendPkgData(pkt);
+#ifdef DEBUG
+                            qDebug("Write frame %3d (size=%5d)\n", i++, pkt->size);
+#endif
 
-                            printf("Write frame %3d (size=%5d)\n", i++, pkt->size);
 #ifdef STREAMTOFILE
                             fwrite(pkt->data, 1, pkt->size, f);
                             fflush(f);
 #endif
-                            //av_free_packet(pkt);
+                            av_free_packet(pkt);
                         }
                         SDL_UnlockYUVOverlay(bmp);
                         SDL_DisplayYUVOverlay(bmp, &rect);
@@ -475,10 +502,10 @@ void CapThread::run()
         }
     }
 
-    qDebug() << "release STAT_THREAD_QUIT！！";
+    qDebug() << "release STAT_THREAD_QUIT!";
     qDebug() << "release resource,free capthread resource and quit!";
-    //    SDL_KillThread(video_tid);
-    //    thread_exit=1;
+    //SDL_KillThread(video_tid);
+    thread_exit=1;
     sws_freeContext(img_convert_ctx);
     SDL_Quit();
     av_free(pEframe);
@@ -492,12 +519,16 @@ void CapThread::run()
     fclose(f);
 #endif
 
+    qDebug() << "capthread free End";
 }
 
 //网络发送数据流
 int CapThread::SendPkgData(AVPacket *pkt)
 {
+    #ifdef DEBUG
     printf("Write pkt addr:%p \n", pkt);
+    #endif
+
     if(pkt)
     {
 #if 1
@@ -514,9 +545,10 @@ int CapThread::SendPkgData(AVPacket *pkt)
         //关闭缓冲区
         buffer.close();
 
+#ifdef DEBUG
         fprintf(stdout,"-->>data size:%d\n",byteArray.count());
         fprintf(stdout,"-->>a size   :%d\n",a);
-
+#endif
         arrayNetSize.append(pkt->size);
         arrayNetData.append(byteArray);
 //        buffer.close();
@@ -597,7 +629,8 @@ void CapThread::SetStopThread()
 }
 void CapThread::SetQuitThread()
 {
-    SetThreadFlag(STAT_THREAD_QUIT);
+//    SetThreadFlag(STAT_THREAD_QUIT);
+    sendSDLQuit();
 }
 
 
