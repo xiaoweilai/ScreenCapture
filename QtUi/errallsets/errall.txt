@@ -1,0 +1,53 @@
+ ffmpeg: ‘UINT64_C’ was not declared in this scope
+分类： ffmpeg 2011-12-05 11:23 7589人阅读 评论(1) 收藏 举报
+cincludefunctionsvnfile
+ffmpeg 默认是用C文件来编译的，如果某个CPP文件想引用ffmpeg中的某些函数或者头文件，有可能出现
+
+‘UINT64_C’ was not declared in this scope的错误
+
+情形大概如下
+
+The same issue i'm getting here when compiling chromium with ffmpeg from svn:
+
+In file included from /usr/include/libavutil/avutil.h:81:0,
+
+from /usr/include/libavcodec/avcodec.h:30,                
+
+ from out/Release/obj.target/geni/ffmpeg_stubs.cc:16:
+
+/usr/include/libavutil/common.h: In function 'int32_t av_clipl_int32(int64_t)':
+
+/usr/include/libavutil/common.h:154:47: error: 'UINT64_C' was not declared in this scope
+
+make: *** [out/Release/obj.target/geni/ffmpeg_stubs.o] Error 1
+
+可以 在cpp文件中加入
+
+extern "C"{
+
+#ifdef __cplusplus
+ #define __STDC_CONSTANT_MACROS
+ #ifdef _STDINT_H
+  #undef _STDINT_H
+ #endif
+ # include <stdint.h>
+#endif
+
+}
+
+来解决
+
+
+ 如果在android下用编译。在Android.mk加入
+
+LOCAL_CFLAGS := -D__STDC_CONSTANT_MACROS即可
+ 
+
+ 
+
+#ifndef SCREENCAP_H
+#define SCREENCAP_H
+
+#define __STDC_CONSTANT_MACROS
+
+
