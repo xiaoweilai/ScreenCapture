@@ -203,13 +203,14 @@ CapThread::CapThread(int width, int height,QObject *parent)
         printf("open codec failed\n");
         exit(1);
     }
+#ifdef STREAMTOFILE
     f = fopen("test.mpg", "wb");
     if (!f)
     {
         printf("open output file failed\n");
         exit(1);
     }
-
+#endif
     pEframe = av_frame_alloc();
     if (!pEframe)
     {
@@ -401,6 +402,7 @@ void CapThread::run()
     {
         if(STAT_THREAD_STOPED == GetThreadFlag())
         {
+            qDebug() << "STAT_THREAD_STOPED！！";
             continue;
         }
         if(STAT_THREAD_QUIT == GetThreadFlag())
@@ -450,9 +452,10 @@ void CapThread::run()
                             SendPkgData(pkt);
 
                             printf("Write frame %3d (size=%5d)\n", i++, pkt->size);
-
+#ifdef STREAMTOFILE
                             fwrite(pkt->data, 1, pkt->size, f);
                             fflush(f);
+#endif
                             //av_free_packet(pkt);
                         }
                         SDL_UnlockYUVOverlay(bmp);
@@ -473,6 +476,7 @@ void CapThread::run()
     }
 
     qDebug() << "release STAT_THREAD_QUIT！！";
+    qDebug() << "release resource,free capthread resource and quit!";
     //    SDL_KillThread(video_tid);
     //    thread_exit=1;
     sws_freeContext(img_convert_ctx);
@@ -484,7 +488,10 @@ void CapThread::run()
     av_free(pDframe);
     avcodec_close(pDc);
     avformat_close_input(&pFormatCtx);
+#ifdef STREAMTOFILE
     fclose(f);
+#endif
+
 }
 
 //网络发送数据流

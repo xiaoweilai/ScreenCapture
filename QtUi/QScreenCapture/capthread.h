@@ -103,8 +103,8 @@ extern "C"
 #ifndef DEBUG
 #define DEBUG
 #endif
-
-
+//是否将获取的视频转换到文件中
+//#define STREAMTOFILE
 
 struct AVFrame;
 struct AVPacket;
@@ -155,7 +155,9 @@ private:
     AVCodec			*pEcodec,*pDcodec;
     AVPacket *pkt;/* 包 */
     AVFrame	 *pEframe,*pDframe,*pDFrameYUV;/* 编码帧、解码帧 */
+#ifdef STREAMTOFILE
     FILE* f;/* 文件句柄 */
+#endif
     int	i,ret,got_output,got_picture, videoindex;/*  */
 
     struct SwsContext *img_convert_ctx;

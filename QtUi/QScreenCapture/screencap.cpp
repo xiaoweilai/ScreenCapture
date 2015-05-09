@@ -174,7 +174,8 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
 //    qDebug("res:%d\n",res);
     qDebug("State:%d\n",p_tcpClient->state());  // State: 3（ConnectedState）正确
 
-    qDebug() << "len:" << len;
+    qDebug() << "To writeData len:" << iData.size();
+    qDebug() << "writtenData len:" << len;
     return(len);
 }
 
@@ -220,10 +221,12 @@ void ScreenCap::MergeMessage()
     sendOut << TotalBytes << qint64((outBlock.size() - sizeof(qint64) * 2));
     //将头发送出去，并计算剩余的数据长度，即数据内容长度(n)
     qint64 len = writeNetData(outBlock);
+    qDebug() << "to write Header len:" << outBlock.size();
+    qDebug() << "written Header len:" << len;
     bytesToWrite = TotalBytes - len;
     outBlock.resize(0);
-    qDebug() << "-->TotalBytes size:" << TotalBytes;
-    qDebug() << "-->bytesToWrite size:" << bytesToWrite;
+//    qDebug() << "-->TotalBytes size:" << TotalBytes;
+//    qDebug() << "-->bytesToWrite size:" << bytesToWrite;
 
     outBlkData = pCapThread->arrayNetData.at(0);
 
