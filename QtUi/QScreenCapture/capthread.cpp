@@ -79,7 +79,7 @@ int sfp_refresh_thread(void *opaque)
         SDL_PushEvent(&event);
         SDL_Delay(40);
     }
-    printf("sfp_refresh_thread quit!!");
+    qDebug("sfp_refresh_thread quit!!");
     return 0;
 }
 
@@ -117,9 +117,9 @@ void CapThread::show_dshow_device()
     AVDictionary* options = NULL;
     av_dict_set(&options,"list_devices","true",0);
     AVInputFormat *iformat = av_find_input_format("dshow");
-    printf("========Device Info=============\n");
+    qDebug("========Device Info=============\n");
     avformat_open_input(&pFormatCtx,"video=dummy",iformat,&options);
-    printf("================================\n");
+    qDebug("================================\n");
 }
 
 /************************************************/
@@ -138,9 +138,9 @@ void CapThread::show_avfoundation_device()
     AVDictionary* options = NULL;
     av_dict_set(&options,"list_devices","true",0);
     AVInputFormat *iformat = av_find_input_format("avfoundation");
-    printf("==AVFoundation Device Info===\n");
+    qDebug("==AVFoundation Device Info===\n");
     avformat_open_input(&pFormatCtx,"",iformat,&options);
-    printf("=============================\n");
+    qDebug("=============================\n");
 }
 
 /************************************************/
@@ -156,6 +156,7 @@ void CapThread::show_avfoundation_device()
 CapThread::CapThread(int width, int height,QObject *parent)
     : QThread(parent)
 {
+    LogInitLog();//保存log
     arrayNetSize.clear();
     arrayNetData.clear();
     m_threadstate = STAT_THREAD_RUNNING;
@@ -174,18 +175,20 @@ CapThread::CapThread(int width, int height,QObject *parent)
     pkt=(AVPacket *)av_malloc(sizeof(AVPacket));
 
 
-    printf("sizeof(AVPacket): %d\n",   sizeof(AVPacket));
+//    qDebug("sizeof(AVPacket): %d\n",   sizeof(AVPacket));
 
     pEcodec = avcodec_find_encoder(AV_CODEC_ID_H264);
     if (pEcodec == 0)
     {
-        printf("find encoder failed\n");
+        qDebug("find encoder failed\n");
+        LogWriteFile("find encoder failed\n");
         exit(1);
     }
     pEc = avcodec_alloc_context3(pEcodec);
     if (!pEc)
     {
-        printf("alloc context failed\n");
+        qDebug("alloc context failed\n");
+        LogWriteFile("alloc context failed\n");
         exit(1);
     }
     pEc->width = resize_width;
@@ -201,21 +204,24 @@ CapThread::CapThread(int width, int height,QObject *parent)
     int re = avcodec_open2(pEc, pEcodec, NULL);
     if (re < 0)
     {
-        printf("open codec failed\n");
+        qDebug("open codec failed\n");
+        LogWriteFile("alloc context failed\n");
         exit(1);
     }
 #ifdef STREAMTOFILE
     f = fopen("test.mpg", "wb");
     if (!f)
     {
-        printf("open output file failed\n");
+        qDebug("open output file failed\n");
+        LogWriteFile("alloc context failed\n");
         exit(1);
     }
 #endif
     pEframe = av_frame_alloc();
     if (!pEframe)
     {
-        printf("Could not allocate video frame\n");
+        qDebug("Could not allocate video frame\n");
+        LogWriteFile("alloc context failed\n");
         exit(1);
     }
 
@@ -227,7 +233,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     ret = av_image_alloc(pEframe->data, pEframe->linesize, pEc->width, pEc->height, pEc->pix_fmt, 32);
     if (ret < 0)
     {
-        printf("Could not allocate raw picture buffer\n");
+        qDebug("Could not allocate raw picture buffer\n");
+        LogWriteFile("alloc context failed\n");
         exit(1);
     }
 
@@ -243,7 +250,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     //
     AVInputFormat *ifmt=av_find_input_format("dshow");
     if(avformat_open_input(&pFormatCtx,"video=screen-capture-recorder",ifmt,NULL)!=0){
-        printf("Couldn't open input stream.\n");
+        qDebug("Couldn't open input stream.\n");
+        LogWriteFile("alloc context failed\n");
         return -1;
     }
 #else
@@ -267,7 +275,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     3.ifmt        : If non-NULL, forces a specific input format.otherwise the format is autodetected-->(format)格式
     */
     if(avformat_open_input(&pFormatCtx,"desktop",ifmt,&options)!=0){
-        printf("Couldn't open input stream.\n");
+        qDebug("Couldn't open input stream.\n");
+        LogWriteFile("alloc context failed\n");
         //        return -1;
         exit(1);
     }
@@ -286,7 +295,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     AVInputFormat *ifmt=av_find_input_format("x11grab");
     //Grab at position 10,20
     if(avformat_open_input(&pFormatCtx,":0.0+10,20",ifmt,&options)!=0){
-        printf("Couldn't open input stream.\n");
+        qDebug("Couldn't open input stream.\n");
+        LogWriteFile("alloc context failed\n");
         return -1;
     }
 #else
@@ -296,7 +306,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     //Avfoundation
     //[video]:[audio]
     if(avformat_open_input(&pFormatCtx,"1",ifmt,NULL)!=0){
-        printf("Couldn't open input stream.\n");
+        qDebug("Couldn't open input stream.\n");
+        LogWriteFile("alloc context failed\n");
         return -1;
     }
 #endif
@@ -308,7 +319,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     */
     if(avformat_find_stream_info(pFormatCtx,NULL)<0)
     {
-        printf("Couldn't find stream information.\n");
+        qDebug("Couldn't find stream information.\n");
+        LogWriteFile("alloc context failed\n");
         //        return -1;
         exit(1);
     }
@@ -323,7 +335,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     }
     if(videoindex==-1)
     {
-        printf("Didn't find a video stream.\n");
+        qDebug("Didn't find a video stream.\n");
+        LogWriteFile("alloc context failed\n");
         //        return -1;
         exit(1);
     }
@@ -331,13 +344,15 @@ CapThread::CapThread(int width, int height,QObject *parent)
     pDcodec=avcodec_find_decoder(pDc->codec_id);
     if(pDcodec==NULL)
     {
-        printf("Codec not found.\n");
+        qDebug("Codec not found.\n");
+        LogWriteFile("alloc context failed\n");
         //        return -1;
         exit(1);
     }
     if(avcodec_open2(pDc, pDcodec,NULL)<0)
     {
-        printf("Could not open codec.\n");
+        qDebug("Could not open codec.\n");
+        LogWriteFile("alloc context failed\n");
         //        return -1;
         exit(1);
     }
@@ -348,7 +363,8 @@ CapThread::CapThread(int width, int height,QObject *parent)
     //avpicture_fill((AVPicture *)pFrameYUV, out_buffer, PIX_FMT_YUV420P, c->width, c->height);
     //SDL----------------------------
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-        printf( "Could not initialize SDL - %s\n", SDL_GetError());
+        qDebug( "Could not initialize SDL - %s\n", SDL_GetError());
+        LogWriteFile("alloc context failed\n");
         //        return -1;
         exit(1);
     }
@@ -367,10 +383,12 @@ CapThread::CapThread(int width, int height,QObject *parent)
     screen = SDL_SetVideoMode(screen_w, screen_h, 0,0);
 
 
-    printf("screen_w:%d,screen_h:%d\n",screen_w,screen_h);
+    qDebug("screen_w:%d,screen_h:%d\n",screen_w,screen_h);
+    LogWriteFile("alloc context failed\n");
 
     if(!screen) {
-        printf("SDL: could not set video mode - exiting:%s\n",SDL_GetError());
+        qDebug("SDL: could not set video mode - exiting:%s\n",SDL_GetError());
+        LogWriteFile("alloc context failed\n");
         //        return -1;
         exit(1);
     }
@@ -399,6 +417,62 @@ CapThread::CapThread(int width, int height,QObject *parent)
     pktnum = 0;
 }
 
+
+/************************************************/
+/*函 数:LogInitLog                               */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:保存log信息                                */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void CapThread::LogInitLog()
+{
+#ifdef SC_LOG_AVINFO  //将抓屏线程数据有效信息进行保存
+    QDate date;
+    QTime time;
+    logavfilename = date.currentDate().toString("screenCaplogyyyy-MM-dd");
+    logavfilename += time.currentTime().toString("_HH-mm-ss");
+    logavfilename +=".log";
+    plogav = new QFile(logavfilename);
+    if(!plogav)
+    {
+        qDebug() <<"Open file Err:" << logavfilename;
+        return ;
+    }
+
+
+    LogWriteFile("\nScreenCapture Log!!\n==============>>>>Starting:\n");
+    qDebug() <<"Screen Capture Log file:" << logavfilename;
+#endif
+
+}
+
+
+/************************************************/
+/*函 数:LogWriteFile                              */
+/*入 参:str-写入log的数据                           */
+/*出 参:无                                        */
+/*返 回:                                          */
+/*功 能:将str写入文件                              */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void CapThread::LogWriteFile(QString str)
+{
+#ifdef SC_LOG_AVINFO
+    if(plogav)
+    {
+        plogav->open(QIODevice::Append);
+        plogav->write(str.toLocal8Bit());
+        plogav->close();
+    }
+#endif
+}
+
 void CapThread::run()
 {
     //Event Loop
@@ -414,16 +488,19 @@ void CapThread::run()
         //以下方法是将ms转为s
         float f = time_Diff / 1000.0;
         qDebug() << "Total time elaspe:" <<f <<"s";
+        LogWriteFile(QString::fromLocal8Bit("\nTotal time elaspe:%1s\n").arg(f));
 
         if(STAT_THREAD_STOPED == GetThreadFlag())
         {
             qDebug() << "STAT_THREAD_STOPED!";
+            LogWriteFile("STAT_THREAD_STOPED\n");
             Sleep(1000);
             continue;
         }
         if(STAT_THREAD_QUIT == GetThreadFlag())
         {
             qDebug() << "STAT_THREAD_QUIT!";
+            LogWriteFile("STAT_THREAD_QUIT!\n");
             break;
         }
         //Wait
@@ -432,17 +509,20 @@ void CapThread::run()
 
             //------------------------------
 #ifdef DEBUG
-            qDebug("->>>>>>>>>count:%d\n",execcount++);
+            qDebug("count:%d\n",execcount++);
+            LogWriteFile(QString::fromLocal8Bit("count:%1\n").arg(execcount++));
 #endif
 
             if(av_read_frame(pFormatCtx, pkt)>=0){
                 if(pkt->stream_index==videoindex){
 #ifdef DEBUG
-                    qDebug("->>>>>>>>>pktnum:%d\n",pktnum++);
+                    qDebug("pktnum:%d\n",pktnum++);
+                    LogWriteFile(QString::fromLocal8Bit("pktnum:%1\n").arg(pktnum++));
 #endif
                     ret = avcodec_decode_video2(pDc, pDframe, &got_picture, pkt);
                     if(ret < 0){
                         qDebug("Decode Error.\n");
+                        LogWriteFile("Decode Error.\n");
                         //                        return -1;
                         exit(1);
                     }
@@ -462,6 +542,7 @@ void CapThread::run()
                         if (ret < 0)
                         {
                             qDebug("Error encoding frame\n");
+                            LogWriteFile("Error encoding frame\n");
                             exit(1);
                         }
 
@@ -470,8 +551,10 @@ void CapThread::run()
                         {
                             SendPkgData(pkt);
 #ifdef DEBUG
-                            qDebug("Write frame %3d (size=%5d)\n", i++, pkt->size);
+//                            qDebug("Write frame %3d (size=%5d)\n", i++, pkt->size);
+
 #endif
+                            LogWriteFile(QString::fromLocal8Bit("Write frame %1 (size=%2)\n").arg(i++).arg(pkt->size));
 
 #ifdef STREAMTOFILE
                             fwrite(pkt->data, 1, pkt->size, f);
@@ -487,12 +570,14 @@ void CapThread::run()
                 av_free_packet(pkt);
             }else{
                 qDebug() << "Exit ThreadExit ThreadExit Thread!";
+                LogWriteFile("Exit ThreadExit ThreadExit Thread!\n");
                 //Exit Thread
                 thread_exit=1;
                 break;
             }
         }else if(event.type==SDL_QUIT){
             qDebug() << "Receive SDL_QUIT!";
+            LogWriteFile("Receive SDL_QUIT!\n");
             thread_exit=1;
             break;
         }
@@ -500,6 +585,8 @@ void CapThread::run()
 
     qDebug() << "release STAT_THREAD_QUIT!";
     qDebug() << "release resource,free capthread resource and quit!";
+    LogWriteFile("release STAT_THREAD_QUIT!\n");
+    LogWriteFile("release resource,free capthread resource and quit!\n");
     //SDL_KillThread(video_tid);
     thread_exit=1;
     sws_freeContext(img_convert_ctx);
@@ -516,13 +603,14 @@ void CapThread::run()
 #endif
 
     qDebug() << "capthread free End";
+    LogWriteFile("capthread free End!\n");
 }
 
 //网络发送数据流
 int CapThread::SendPkgData(AVPacket *pkt)
 {
     #ifdef DEBUG
-    printf("Write pkt addr:%p \n", pkt);
+    qDebug("Write pkt addr:%p \n", pkt);
     #endif
 
     if(pkt)
@@ -542,8 +630,8 @@ int CapThread::SendPkgData(AVPacket *pkt)
         buffer.close();
 
 #ifdef DEBUG
-        fprintf(stdout,"-->>data size:%d\n",byteArray.count());
-        fprintf(stdout,"-->>a size   :%d\n",a);
+        qDebug("-->>data size:%d\n",byteArray.count());
+        qDebug("-->>a size   :%d\n",a);
 #endif
         arrayNetSize.append(pkt->size);
         arrayNetData.append(byteArray);
@@ -585,10 +673,10 @@ int CapThread::SendPkgData(AVPacket *pkt)
 
 
 
-        printf("Write TotalBytes :%d \n", TotalBytes);
+        qDebug("Write TotalBytes :%d \n", TotalBytes);
         if(p_tcpClient)
         {
-            printf("Write outBlock \n");
+            qDebug("Write outBlock \n");
             p_tcpClient->write(outBlock);
         }
 #endif

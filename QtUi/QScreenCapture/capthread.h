@@ -72,6 +72,9 @@ extern "C"
 #include <QAbstractSocket>
 #include <QTcpSocket>
 #include <QHostAddress>
+#include <QFile>
+#include <QDate>
+#include <QTime>
 #include <stdio.h>
 
 
@@ -106,6 +109,8 @@ extern "C"
 #endif
 //是否将获取的视频转换到文件中
 //#define STREAMTOFILE
+
+#define  SC_LOG_AVINFO  //将抓屏线程数据有效信息进行保存
 
 struct AVFrame;
 struct AVPacket;
@@ -148,6 +153,10 @@ public:
     quint8 GetThreadFlag(void);
     int WithNetworkInit(QString ipaddr);
     int SendPkgData(AVPacket *pkt);
+
+    /*************[保存log]**********************/
+    void LogInitLog();
+    void LogWriteFile(QString str);
 public:
     void show_dshow_device();
     void show_avfoundation_device();
@@ -171,7 +180,9 @@ private:
     SDL_Rect rect;
     quint8 m_threadstate;
 
-
+    /*************[保存log]**********************/
+    QFile *plogav;
+    QString logavfilename;
 
 public:
     /*************[网络传输]**********************/

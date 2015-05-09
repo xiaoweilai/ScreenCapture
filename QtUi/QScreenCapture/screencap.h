@@ -60,6 +60,8 @@ enum{
 
 //是否保存LOG信息到文件
 #define SC_LOG
+//网络发送数据的内容
+#define SC_DATASTREAM_LOG
 
 
 namespace Ui {
@@ -124,12 +126,15 @@ private:
 
 
     /*************[保存log]**********************/
-    QFile *pFile;
-    QString filename;
+    QFile *plogFile;
+    QString logfilename;
+    QFile *pdataFile;
+    QString datafilename;
 
 private:
     void LogInitLog();
     void LogWriteFile(QString str);
+    void LogWriteDataFile(const QByteArray &data);
 
 signals:
     void emitCtrlPthreadStart();

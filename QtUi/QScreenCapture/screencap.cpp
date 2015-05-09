@@ -77,22 +77,38 @@ ScreenCap::ScreenCap(QWidget *parent) :
 /*************************************************/
 void ScreenCap::LogInitLog()
 {
-#ifdef SC_LOG
+#ifdef SC_LOG  //将发送网络的数据有效信息进行保存
     QDate date;
     QTime time;
-    filename = date.currentDate().toString("sclogyyyy-MM-dd");
-    filename += time.currentTime().toString("_HH-mm-ss");
-    filename +=".log";
-    pFile = new QFile(filename);
-    if(!pFile)
+    logfilename = date.currentDate().toString("sclogyyyy-MM-dd");
+    logfilename += time.currentTime().toString("_HH-mm-ss");
+    logfilename +=".log";
+    plogFile = new QFile(logfilename);
+    if(!plogFile)
     {
-        qDebug() <<"Open file Err:" << filename;
+        qDebug() <<"Open file Err:" << logfilename;
         return ;
     }
 
 
     LogWriteFile("\nTcpWrite NetData Log!!\n==============>>>>Starting:\n");
-    qDebug() <<"Log file:" << filename;
+    qDebug() <<"Log file:" << logfilename;
+#endif
+
+
+#ifdef SC_DATASTREAM_LOG  //将发送数据的内容进行保存，以二进制形式
+    datafilename = date.currentDate().toString("scDatyyyy-MM-dd");
+    datafilename += time.currentTime().toString("_HH-mm-ss");
+    datafilename +=".bin";
+    pdataFile = new QFile(datafilename);
+    if(!pdataFile)
+    {
+        qDebug() <<"Open file Err:" << datafilename;
+        return ;
+    }
+    LogWriteDataFile("FFFEFFFE");
+    qDebug() <<"Log file:" << datafilename;
+
 #endif
 }
 
@@ -109,11 +125,33 @@ void ScreenCap::LogInitLog()
 void ScreenCap::LogWriteFile(QString str)
 {
 #ifdef SC_LOG
-    if(pFile)
+    if(plogFile)
     {
-        pFile->open(QIODevice::Append);
-        pFile->write(str.toLocal8Bit());
-        pFile->close();
+        plogFile->open(QIODevice::Append);
+        plogFile->write(str.toLocal8Bit());
+        plogFile->close();
+    }
+#endif
+}
+
+/************************************************/
+/*函 数:LogWriteDataFile                          */
+/*入 参:data-写入log的数据                          */
+/*出 参:无                                        */
+/*返 回:                                          */
+/*功 能:将data写入文件,比如二进制数据                */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::LogWriteDataFile(const QByteArray &data)
+{
+#ifdef SC_LOG
+    if(pdataFile)
+    {
+        pdataFile->open(QIODevice::Append);
+        pdataFile->write(data);
+        pdataFile->close();
     }
 #endif
 }
@@ -324,11 +362,15 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
 //    qDebug() << "To writeData len:" << iData.size();
 //    qDebug() << "writtenData len:" << len;
     QString idateInfo = QString::fromLocal8Bit("To writeData len:%1\n").arg(iData.size());
-    QString writtendateinfo = QString::fromLocal8Bit("writtenData len:%1\n").arg(len);
+    QString writtendateinfo = QString::fromLocal8Bit("writtenData  len:%1\n").arg(len);
 
 #ifdef SC_LOG
     LogWriteFile(idateInfo);
     LogWriteFile(writtendateinfo);
+#endif
+
+#ifdef SC_DATASTREAM_LOG
+    LogWriteDataFile(iData);
 #endif
 
     if(len != iData.size())
@@ -360,19 +402,19 @@ void ScreenCap::MergeMessage()
 *  宽度 ---|   8    |   8       |   8   |   n   |.....
 *  含义 ---|  总长度 |  头长度(8) | 头内容 | 数据内容|.....
 *  总长度 = |<----------------------------->|.....
-*  总长度 = 8 + 8 + 0 + n
+*  总长度 = 8 + 8 + 8 + n
 *  头内容 ： 0xFFFEFFFE;//值
 *  头长度 ： 8
 ************************************************************/
     TotalBytes = pCapThread->arrayNetSize.at(0); //数据大小
-    qDebug() << "net size:" << TotalBytes;
+//    qDebug() << "net size:" << TotalBytes;
 
     QDataStream sendOut(&outBlock, QIODevice::WriteOnly);
     sendOut.setVersion(QDataStream::Qt_4_3);
 
     qint64 headerFlag = 0xFFFEFFFE;//值
     sendOut << qint64(0) << qint64(0)  << headerFlag;
-    qDebug() << "outBlock size:" << outBlock.size();
+//    qDebug() << "outBlock size:" << outBlock.size();
 
     TotalBytes +=  outBlock.size();//总大小 = 数据 + 8字节(存在总大小字节数) + 8"头表达式"
     //    qDebug() << "TotalBytes size:" << TotalBytes;
