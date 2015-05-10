@@ -21,8 +21,8 @@ public class Log {
 		return;
 	}
 	public static void writeErroLogToFile(String content) {
-		String path = "Log";
-		return;
+//		String path = "Log";
+//		return;
 //		File idFile = new File(path);
 //		if (!idFile.exists()) {
 //			idFile.mkdir();

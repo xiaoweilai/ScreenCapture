@@ -11,9 +11,12 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.Enumeration;
 import java.net.Inet4Address;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -176,19 +179,32 @@ private static int curImageIndex = 0;
         } catch (Exception e) { 
 	//	            log.error("helper:get file from byte process error!"); 
 	    e.printStackTrace(); 
-	} finally { 
-	    if (stream != null) { 
-	        try { 
+	} finally {
+	    if (stream != null) {
+	        try {
 	            stream.close(); 
-	        } catch (IOException e) { 
+	        } catch (IOException e) {
 	//	                    log.error("helper:get file from byte process error!"); 
 	                e.printStackTrace(); 
-	            } 
-	        } 
-	    } 
+	            }
+	        }
+	    }
 	    return ret; 
 	}
 	 
+	/**
+	  * 获取现在时间
+	  * 
+	  * @return返回字符串格式 yyyy-MM-dd HH:mm:ss
+	  */
+	@SuppressLint("SimpleDateFormat")
+	public static String getStringDate() {
+	  Date currentTime = new Date(System.currentTimeMillis());
+	  SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	  String dateString = formatter.format(currentTime);
+	  return dateString;
+	}
+	
 	/** 
      * 读取文件的内容 
      * @param filename 文件名称 
@@ -220,7 +236,7 @@ private static int curImageIndex = 0;
 	public static void saveBitmap(Bitmap bm) {
 			File f = new File("/sdcard/test");
 			if (!f.exists()) {
-			f.mkdir();
+				f.mkdir();
 			}
 		  f = new File("/sdcard/test/", "test"+ curImageIndex +".jpg");
 		  curImageIndex++;

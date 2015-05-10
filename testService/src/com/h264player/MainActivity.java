@@ -57,6 +57,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 	ByteBuffer buffer = ByteBuffer.wrap(mPixel);
 	private long packageHead = 0x00000000FFFEFFFEL;
 	byte bytes = 0x40;
+	private static String curStartTimeFileName;
 	
 	@SuppressLint("NewApi")
 	@Override
@@ -65,6 +66,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 		setContentView(R.layout.activity_main);
 		mContext = MainActivity.this;
 		mRes = mContext.getResources();
+		curStartTimeFileName = PublicFunction.getStringDate();
 //		mAPP = (MyAPP)getApplication();
 //		mAPP.setHandler(mHandler);
 		PublicFunction.getScreenWithAndHeight(mContext);
@@ -105,6 +107,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 			SocketServer();
 		}catch(Throwable e){
 			e.printStackTrace();
+			PublicFunction.writeFile(mContext, getLogFileName(), "SocketServer Th rowable" + Thread.currentThread().getName());
 			System.out.println("SocketServer Th rowable");
 			mHandler.sendEmptyMessage(6);
  			receiveImag.interrupt();
@@ -190,6 +193,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 		        	 try{ 
 			        	 mSocket.sendUrgentData(0xFF); 
 			        	 }catch(Exception ex){ 
+			        		 PublicFunction.writeFile(mContext, getLogFileName(), "线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
 			        		 System.out.println("线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
 			        		 try {
 			     				if (null != mDis)
@@ -214,6 +218,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				if(!mReceiveSuccessedFlag){
+					PublicFunction.writeFile(mContext, getLogFileName(), "线程连接异常   run " + Thread.currentThread().getName());
 					System.out.println("线程连接异常   run " + Thread.currentThread().getName());
 					mHandler.sendEmptyMessage(6);
 	     			receiveImag.interrupt();
@@ -234,10 +239,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 			
 		}
 	};
-	
-	long tempTotalSize = 0;
-	long readPackageHead = 0;
-	long readPackageContent = 0;
+
 public void receiveMessage(DataInputStream input, Socket s, DataOutputStream output) throws SocketException{
 		
 		int numRead = 0;
@@ -245,9 +247,9 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 			int tempBytelength = input.available();
 			if(!mReceiveSuccessedBeforeFourByteFlag){
 	            if(tempBytelength >= 100){
-	            	tempTotalSize = input.readLong();
-	            	readPackageHead = input.readLong();
-	            	readPackageContent = input.readLong();
+	            	long tempTotalSize = input.readLong();
+	            	long readPackageHead = input.readLong();
+	            	long readPackageContent = input.readLong();
 	            	if(readPackageHead != 8 || readPackageContent != packageHead){
 	            		return;
 	            	}
@@ -277,11 +279,9 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 					}
 			}
 		} catch (IOException e) {
-			Log.writeErroLogToFile("socket input output异常"
-					+ Thread.currentThread().getName());
-				Log.writeErroLogToFile("线程连接异常" + Thread.currentThread().getName());
-				System.out.println("线程连接异常  receiveMessage" + Thread.currentThread().getName());
-			
+			PublicFunction.writeFile(mContext, getLogFileName(), "socket input output异常" + Thread.currentThread().getName());
+			PublicFunction.writeFile(mContext, getLogFileName(), "线程连接异常" + Thread.currentThread().getName());
+			System.out.println("线程连接异常  receiveMessage" + Thread.currentThread().getName());
 			try {
 				if (null != input)
 					input.close();
@@ -339,6 +339,10 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 				}
 	        }  
 	}  
+	
+	public static String getLogFileName(){
+		return curStartTimeFileName;
+	}
 		@Override
 		public void onClick(View v) {
 //			int i = mRelMain.getSystemUiVisibility();  
