@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'screencap.h'
 **
-** Created: Sat May 9 21:35:52 2015
+** Created: Sun May 10 22:03:25 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,7 +23,7 @@ static const uint qt_meta_data_ScreenCap[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      14,   14, // methods
+      15,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -47,6 +47,7 @@ static const uint qt_meta_data_ScreenCap[] = {
      363,   10,   10,   10, 0x0a,
      377,   10,   10,   10, 0x0a,
      389,   10,   10,   10, 0x0a,
+     408,   10,   10,   10, 0x0a,
 
        0        // eod
 };
@@ -61,7 +62,8 @@ static const char qt_meta_stringdata_ScreenCap[] = {
     "displayNetErr(QAbstractSocket::SocketError)\0"
     "QString\0state\0getSockState(QAbstractSocket::SocketState)\0"
     "numBytes\0updateClientProgress(qint64)\0"
-    "NetSendData()\0TimerSets()\0MergeMessage()\0"
+    "NetSendData()\0TimerSets()\0MergeSendMessage()\0"
+    "InfoRecvMessage()\0"
 };
 
 void ScreenCap::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -86,7 +88,8 @@ void ScreenCap::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         case 10: _t->updateClientProgress((*reinterpret_cast< qint64(*)>(_a[1]))); break;
         case 11: _t->NetSendData(); break;
         case 12: _t->TimerSets(); break;
-        case 13: _t->MergeMessage(); break;
+        case 13: _t->MergeSendMessage(); break;
+        case 14: _t->InfoRecvMessage(); break;
         default: ;
         }
     }
@@ -124,9 +127,9 @@ int ScreenCap::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 14)
+        if (_id < 15)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 14;
+        _id -= 15;
     }
     return _id;
 }

@@ -150,7 +150,8 @@ public slots:
     void updateClientProgress(qint64 numBytes);
     void NetSendData();
     void TimerSets();
-    void MergeMessage();
+    void MergeSendMessage();
+    void InfoRecvMessage();
 };
 
 #endif // SCREENCAP_H

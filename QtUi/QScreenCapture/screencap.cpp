@@ -64,6 +64,31 @@ ScreenCap::ScreenCap(QWidget *parent) :
     LogInitLog();
 }
 
+/************************************************/
+/*函 数:~ScreenCap                               */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:析构函数                                   */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+ScreenCap::~ScreenCap()
+{
+    if((NULL != pCapThread)&&(STAT_STARTED == ScreenCap::isStarted))
+    {
+        qDebug() << "delete pCapThread!!!";
+        pCapThread->sendSDLQuit();
+        pCapThread->terminate();
+        pCapThread->quit();
+        pCapThread->deleteLater();
+        delete pCapThread;
+        pCapThread = NULL;
+    }
+    delete ui;
+}
+
 
 /************************************************/
 /*函 数:LogInitLog                               */
@@ -383,17 +408,17 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
 }
 
 /************************************************/
-/*函 数:MergeMessage                             */
+/*函 数:MergeSendMessage                          */
 /*入 参:无                                        */
 /*出 参:无                                        */
 /*返 回:无                                        */
-/*功 能:组合报文，包括数据总长度，头长度，头内容和数据内容 */
+/*功 能:组合发送的报文，包括数据总长度，头长度，头内容和数据内容 */
 /*     同时将头内容发送出去                          */
 /*author :wxj                                    */
 /*version:1.0                                    */
 /*时 间:2015.4.25                                 */
 /*************************************************/
-void ScreenCap::MergeMessage()
+void ScreenCap::MergeSendMessage()
 {
 
     /************************************************************
@@ -451,6 +476,68 @@ void ScreenCap::MergeMessage()
 
     picNametime++;//发送次数
 }
+
+
+/************************************************/
+/*函 数:InfoRecvMessage                           */
+/*入 参:无                                        */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:接收报文的信息                              */
+/*                                               */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::InfoRecvMessage()
+{
+
+/************************************************************
+*                数据流接收格式
+*
+*
+*
+*
+*
+*
+*
+************************************************************/
+
+//    QString TotalBytesInfo = QString::fromLocal8Bit("TotalBytes:%1\n").arg(TotalBytes);
+//    LogWriteFile(TotalBytesInfo);
+#define COMLENGTH 100
+    //接收到的数据的长度
+    qint64 len = p_tcpClient->bytesAvailable();
+//    qDebug() << "---->>Recv Stream len:" << len;
+    if(len > COMLENGTH)
+    {
+        qDebug() << "Recv Stream len > 100:" << len;
+        QByteArray byte = p_tcpClient->read(COMLENGTH);
+        qDebug() << "bytecontent:" <<byte;
+    }
+
+
+
+//    if(len != outBlock.size())
+//    {
+//        qDebug() << "Header not same!!";
+//        qDebug() << "to write Header len:" << outBlock.size();
+//        qDebug() << "written Header len:" << len;
+//    }
+//    bytesToWrite = TotalBytes - len;
+//    outBlock.resize(0);
+//    //    qDebug() << "-->TotalBytes size:" << TotalBytes;
+//    //    qDebug() << "-->bytesToWrite size:" << bytesToWrite;
+
+//    outBlkData = pCapThread->arrayNetData.at(0);
+
+//    writeNetData(outBlkData);
+
+//    qDebug() << "-->outBlkData size :" << outBlkData.size();
+
+//    picNametime++;//发送次数
+}
+
 
 /************************************************/
 /*函 数:updateClientProgress                     */
@@ -644,7 +731,8 @@ void ScreenCap::NetSendData()
     if(SEND_DONE == sendDoneFlag)
     {
         sendDoneFlag = SEND_UNDO;
-        MergeMessage();
+        MergeSendMessage();
+        InfoRecvMessage();
 
         pCapThread->arrayNetData.removeAt(0);
         pCapThread->arrayNetSize.removeAt(0);
@@ -1040,31 +1128,4 @@ void ScreenCap::showTextConnecting(void)
 }
 
 
-
-
-
-/************************************************/
-/*函 数:~ScreenCap                               */
-/*入 参:无                                        */
-/*出 参:无                                        */
-/*返 回:无                                        */
-/*功 能:析构函数                                   */
-/*author :wxj                                    */
-/*version:1.0                                    */
-/*时 间:2015.4.25                                 */
-/*************************************************/
-ScreenCap::~ScreenCap()
-{
-    if((NULL != pCapThread)&&(STAT_STARTED == ScreenCap::isStarted))
-    {
-        qDebug() << "delete pCapThread!!!";
-        pCapThread->sendSDLQuit();
-        pCapThread->terminate();
-        pCapThread->quit();
-        pCapThread->deleteLater();
-        delete pCapThread;
-        pCapThread = NULL;
-    }
-    delete ui;
-}
 
