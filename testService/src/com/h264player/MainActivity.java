@@ -38,8 +38,6 @@ public class MainActivity extends Activity implements View.OnClickListener{
 	Socket mSocket;
 	private static boolean mReceiveSuccessedFlag = false;
 	private static boolean mReceiveSuccessedBeforeFourByteFlag = false;
-	DataOutputStream mDos = null;
-	DataInputStream mDis = null;
 	Bitmap mImgBitmapShow;
 	Message msg;
 	private TextView mTextIPAddress;
@@ -110,7 +108,11 @@ public class MainActivity extends Activity implements View.OnClickListener{
 			PublicFunction.writeFile(mContext, getLogFileName(), "SocketServer Th rowable" + Thread.currentThread().getName());
 			System.out.println("SocketServer Th rowable");
 			mHandler.sendEmptyMessage(6);
- 			receiveImag.interrupt();
+			if(receiveImag != null){
+				receiveImag.interrupt();
+				receiveImag = null;
+			}
+ 			mReceiveSuccessedFlag = true;
 		} finally{
 			
 		}				
@@ -172,11 +174,13 @@ public class MainActivity extends Activity implements View.OnClickListener{
 			mTextIPAddress.setText("未获取正确的IP地址，请检查后在查看。");
 		}	
 	}
+	
 	Runnable run = new Runnable() {
-		
+		ServerSocket ss = null;
+		DataOutputStream mDos = null;
+		DataInputStream mDis = null;
 		@Override
 		public void run() {
-			 ServerSocket ss = null;
 	         try {
 	        	 mHandler.sendEmptyMessage(2);
 				 ss = new ServerSocket();
@@ -189,29 +193,8 @@ public class MainActivity extends Activity implements View.OnClickListener{
 		         mDos = new DataOutputStream(mSocket.getOutputStream());
 		         //用于接收客户端发来的数据的输入流
 		         mDis = new DataInputStream(mSocket.getInputStream());
+		         mHandler.sendEmptyMessageDelayed(8, 5000);
 		         while(!mReceiveSuccessedFlag){
-		        	 try{ 
-			        	 mSocket.sendUrgentData(0xFF); 
-			        	 }catch(Exception ex){ 
-			        		 PublicFunction.writeFile(mContext, getLogFileName(), "线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
-			        		 System.out.println("线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
-			        		 try {
-			     				if (null != mDis)
-			     					mDis.close();
-			     				if (null != mDos)
-			     					mDos.close();
-			     				if (null != ss){
-			     					ss.close();
-			     				}
-			     			} catch (IOException ee) {
-			     				ee.printStackTrace();
-			     			}
-			     			mHandler.sendEmptyMessage(6);
-			     			receiveImag.interrupt();
-			     			receiveImag = null;
-			     			mReceiveSuccessedFlag = true;
-			     			break;
-			        	 }
 		        	 receiveMessage(mDis,mSocket,mDos);
 	        	 }
 			} catch (IOException e) {
@@ -221,8 +204,11 @@ public class MainActivity extends Activity implements View.OnClickListener{
 					PublicFunction.writeFile(mContext, getLogFileName(), "线程连接异常   run " + Thread.currentThread().getName());
 					System.out.println("线程连接异常   run " + Thread.currentThread().getName());
 					mHandler.sendEmptyMessage(6);
-	     			receiveImag.interrupt();
+					if(receiveImag != null){
+						receiveImag.interrupt();
+					}
 				}
+				mReceiveSuccessedFlag = true;
 				receiveImag = null;
 				try {
      				if (null != mDis)
@@ -293,7 +279,11 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 				ee.printStackTrace();
 			}
 			mHandler.sendEmptyMessage(6);
- 			receiveImag.interrupt();
+			mReceiveSuccessedFlag = true;
+			if(receiveImag != null){
+				receiveImag.interrupt();
+				receiveImag = null;
+			}
 		} 
 	}
 		
@@ -336,12 +326,39 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 				}else if(msg.what == 7){
 					setIpAddress();
 					SocketServer();
+				} else if (msg.what == 8){
+		        	 try{ 
+			        	 mSocket.sendUrgentData(0xFF); 
+			        	 mHandler.sendEmptyMessageDelayed(8, 5000);
+		        	 }catch(Exception ex){
+		        		 mHandler.removeMessages(8);
+		        		 PublicFunction.writeFile(mContext, getLogFileName(), "线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
+		        		 System.out.println("线程连接异常  mReceiveSuccessedFlag" + Thread.currentThread().getName());
+//		        		 try {
+//		     				if (null != mDis)
+//		     					mDis.close();
+//		     				if (null != mDos)
+//		     					mDos.close();
+//		     				if (null != ss){
+//		     					ss.close();
+//		     				}
+//		     			} catch (IOException ee) {
+//		     				ee.printStackTrace();
+//		     			}
+		        		mReceiveSuccessedFlag = true;
+		     			mHandler.sendEmptyMessage(6);
+		     			if(receiveImag != null){
+			     			receiveImag.interrupt();
+			     			receiveImag = null;
+		     			}
+		     			
+		        	 }
 				}
 	        }  
 	}  
 	
 	public static String getLogFileName(){
-		return curStartTimeFileName;
+		return curStartTimeFileName + ".txt";
 	}
 		@Override
 		public void onClick(View v) {
