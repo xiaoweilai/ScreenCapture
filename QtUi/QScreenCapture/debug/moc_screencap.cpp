@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'screencap.h'
 **
-** Created: Sun May 10 22:03:25 2015
+** Created: Sun May 10 22:28:23 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!

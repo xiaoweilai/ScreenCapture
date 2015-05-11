@@ -62,6 +62,10 @@ enum{
 #define SC_LOG
 //网络发送数据的内容
 #define SC_DATASTREAM_LOG
+//带文件名的数据写入文件
+#define SC_LOG_DATA_WITHNAME
+
+#define SC_LOG_RECVDATA_FILENAME "sclog_recvdata.bin"
 
 
 namespace Ui {
@@ -135,6 +139,7 @@ private:
     void LogInitLog();
     void LogWriteFile(QString str);
     void LogWriteDataFile(const QByteArray &data);
+    void LogWriteFileComWithName(QString filename,QByteArray data);
 
 signals:
     void emitCtrlPthreadStart();

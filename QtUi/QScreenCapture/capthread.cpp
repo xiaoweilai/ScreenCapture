@@ -569,11 +569,21 @@ void CapThread::run()
                 }
                 av_free_packet(pkt);
             }else{
-                qDebug() << "Exit ThreadExit ThreadExit Thread!";
-                LogWriteFile("Exit ThreadExit ThreadExit Thread!\n");
+                qDebug() << "Exception condition!";
+//                qDebug() << "Exit ThreadExit ThreadExit Thread!";
+                LogWriteFile("Exception condition!\n");
+#if 0
+                qDebug() << "Exception condition!";
+//                qDebug() << "Exit ThreadExit ThreadExit Thread!";
+                LogWriteFile("Exception condition!\n");
                 //Exit Thread
                 thread_exit=1;
                 break;
+#else
+                qDebug() << "Exception condition!continue!";
+                LogWriteFile("Exception condition!continue!\n");
+                continue;
+#endif
             }
         }else if(event.type==SDL_QUIT){
             qDebug() << "Receive SDL_QUIT!";
@@ -583,7 +593,6 @@ void CapThread::run()
         }
     }
 
-    qDebug() << "release STAT_THREAD_QUIT!";
     qDebug() << "release resource,free capthread resource and quit!";
     LogWriteFile("release STAT_THREAD_QUIT!\n");
     LogWriteFile("release resource,free capthread resource and quit!\n");

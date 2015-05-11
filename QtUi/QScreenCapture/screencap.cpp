@@ -182,6 +182,27 @@ void ScreenCap::LogWriteDataFile(const QByteArray &data)
 }
 
 /************************************************/
+/*函 数:LogWriteFileComWithName                   */
+/*入 参:filename-写入文件的名称，data-写入的数据      */
+/*出 参:无                                        */
+/*返 回:                                          */
+/*功 能:将str写入文件                              */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::LogWriteFileComWithName(QString filename,QByteArray data)
+{
+#ifdef SC_LOG_DATA_WITHNAME
+    QFile file(filename);
+
+    file.open(QIODevice::Append);
+    file.write(data);
+    file.close();
+#endif
+}
+
+/************************************************/
 /*函 数:WithNetworkInit                          */
 /*入 参:ipaddr-IP地址                             */
 /*出 参:无                                        */
@@ -197,7 +218,7 @@ int ScreenCap::WithNetworkInit(QString ipaddr)
     {
         return RET_FAIL;
     }
-//    p_tcpClient = NULL;//tcp socket
+    //    p_tcpClient = NULL;//tcp socket
     TotalBytes = 0;
 
     //创建tcpsocket
@@ -213,11 +234,11 @@ int ScreenCap::WithNetworkInit(QString ipaddr)
     p_tcpClient->connectToHost(ipaddr,
                                QString(DEFAULT_PORT).toInt());
     p_tcpClient->setSocketOption(QAbstractSocket::LowDelayOption, 0);//优化为最低延迟，后面的1代码启用该优化。
-//    p_tcpClient->setSocketOption(QAbstractSocket::KeepAliveOption,1);
-//    int send_len = 16 * 1024;
-//    if(setsockopt( fd, SOL_SOCKET, SO_SNDBUF, (void*)&send_len, sizeof(send_len) ) < 0 ){
-//        return RET_FAIL;
-//    }
+    //    p_tcpClient->setSocketOption(QAbstractSocket::KeepAliveOption,1);
+    //    int send_len = 16 * 1024;
+    //    if(setsockopt( fd, SOL_SOCKET, SO_SNDBUF, (void*)&send_len, sizeof(send_len) ) < 0 ){
+    //        return RET_FAIL;
+    //    }
 
     //waitForConnected()等待连接知道超过最大等待时间。如果连接建立函数返回true；否则返回false。
     //当返回false时可以调用error来确定无法连接的原因
@@ -302,7 +323,7 @@ void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
         LogWriteFile(QString::fromLocal8Bit("socketError:%1").arg(p_tcpClient->errorString()));
         LogWriteFile(QString::fromLocal8Bit("socketError:%1").arg(socketError));
     }
-//写log
+    //写log
 
 
 
@@ -326,7 +347,7 @@ void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
 #endif
         //异常，直接关闭传输
         emitCtrlPthreadStop();//发送停止抓屏蔽和传输,抓屏程序在休息
-//        Sleep(1000);
+        //        Sleep(1000);
         pNetSendTimer->stop();
         pCapThread->arrayNetData.clear();
         pCapThread->arrayNetSize.clear();
@@ -384,8 +405,8 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
     //    qDebug("res:%d\n",res);
     qDebug("State:%d\n",p_tcpClient->state());  // State: 3（ConnectedState）正确
 
-//    qDebug() << "To writeData len:" << iData.size();
-//    qDebug() << "writtenData len:" << len;
+    //    qDebug() << "To writeData len:" << iData.size();
+    //    qDebug() << "writtenData len:" << len;
     QString idateInfo = QString::fromLocal8Bit("To writeData len:%1\n").arg(iData.size());
     QString writtendateinfo = QString::fromLocal8Bit("writtenData  len:%1\n").arg(len);
 
@@ -432,14 +453,14 @@ void ScreenCap::MergeSendMessage()
 *  头长度 ： 8
 ************************************************************/
     TotalBytes = pCapThread->arrayNetSize.at(0); //数据大小
-//    qDebug() << "net size:" << TotalBytes;
+    //    qDebug() << "net size:" << TotalBytes;
 
     QDataStream sendOut(&outBlock, QIODevice::WriteOnly);
     sendOut.setVersion(QDataStream::Qt_4_3);
 
     qint64 headerFlag = 0xFFFEFFFE;//值
     sendOut << qint64(0) << qint64(0)  << headerFlag;
-//    qDebug() << "outBlock size:" << outBlock.size();
+    //    qDebug() << "outBlock size:" << outBlock.size();
 
     TotalBytes +=  outBlock.size();//总大小 = 数据 + 8字节(存在总大小字节数) + 8"头表达式"
     //    qDebug() << "TotalBytes size:" << TotalBytes;
@@ -495,47 +516,44 @@ void ScreenCap::InfoRecvMessage()
 /************************************************************
 *                数据流接收格式
 *
-*
-*
-*
-*
-*
-*
 ************************************************************/
 
-//    QString TotalBytesInfo = QString::fromLocal8Bit("TotalBytes:%1\n").arg(TotalBytes);
-//    LogWriteFile(TotalBytesInfo);
-#define COMLENGTH 100
+    //    QString TotalBytesInfo = QString::fromLocal8Bit("TotalBytes:%1\n").arg(TotalBytes);
+    //    LogWriteFile(TotalBytesInfo);
+#define COMLENGTH 0
     //接收到的数据的长度
     qint64 len = p_tcpClient->bytesAvailable();
-//    qDebug() << "---->>Recv Stream len:" << len;
+    qDebug() << "---->>Recv Stream len:" << len;
     if(len > COMLENGTH)
     {
-        qDebug() << "Recv Stream len > 100:" << len;
-        QByteArray byte = p_tcpClient->read(COMLENGTH);
-        qDebug() << "bytecontent:" <<byte;
+//        qDebug() << "Recv Stream len > 100:" << len;
+        QByteArray byteArray = p_tcpClient->read(p_tcpClient->bytesAvailable());
+        LogWriteFileComWithName(SC_LOG_RECVDATA_FILENAME, byteArray);
+//        qDebug() << "bytecontent:" <<byteArray;
+        byteArray.clear();
     }
 
 
 
-//    if(len != outBlock.size())
-//    {
-//        qDebug() << "Header not same!!";
-//        qDebug() << "to write Header len:" << outBlock.size();
-//        qDebug() << "written Header len:" << len;
-//    }
-//    bytesToWrite = TotalBytes - len;
-//    outBlock.resize(0);
-//    //    qDebug() << "-->TotalBytes size:" << TotalBytes;
-//    //    qDebug() << "-->bytesToWrite size:" << bytesToWrite;
 
-//    outBlkData = pCapThread->arrayNetData.at(0);
+    //    if(len != outBlock.size())
+    //    {
+    //        qDebug() << "Header not same!!";
+    //        qDebug() << "to write Header len:" << outBlock.size();
+    //        qDebug() << "written Header len:" << len;
+    //    }
+    //    bytesToWrite = TotalBytes - len;
+    //    outBlock.resize(0);
+    //    //    qDebug() << "-->TotalBytes size:" << TotalBytes;
+    //    //    qDebug() << "-->bytesToWrite size:" << bytesToWrite;
 
-//    writeNetData(outBlkData);
+    //    outBlkData = pCapThread->arrayNetData.at(0);
 
-//    qDebug() << "-->outBlkData size :" << outBlkData.size();
+    //    writeNetData(outBlkData);
 
-//    picNametime++;//发送次数
+    //    qDebug() << "-->outBlkData size :" << outBlkData.size();
+
+    //    picNametime++;//发送次数
 }
 
 
