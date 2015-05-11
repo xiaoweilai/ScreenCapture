@@ -754,6 +754,8 @@ void ScreenCap::NetSendData()
 
         pCapThread->arrayNetData.removeAt(0);
         pCapThread->arrayNetSize.removeAt(0);
+        //设置传输状态栏显示变化（传输中...）
+        showTextTransferingNo(picNametime);
 
         sendDoneFlag = SEND_DONE;
     }
@@ -1039,6 +1041,40 @@ void ScreenCap::showStateBarInfo(const char *pstr)
 void ScreenCap::showTextTransfering()
 {
     showStateBarInfo("传输中...");
+}
+
+/************************************************/
+/*函 数:showTextTransferingNo                    */
+/*入 参:pstr-字符串                               */
+/*出 参:无                                        */
+/*返 回:无                                        */
+/*功 能:状态栏显示"传输中...按个数"                  */
+/*author :wxj                                    */
+/*version:1.0                                    */
+/*时 间:2015.4.25                                 */
+/*************************************************/
+void ScreenCap::showTextTransferingNo(quint64 num)
+{
+#define CASENUMUNIT 80
+    quint64 order = num % CASENUMUNIT;
+    switch(order)
+    {
+    case 0:
+        showStateBarInfo("传输中");
+        break;
+    case 20:
+        showStateBarInfo("传输中.");
+        break;
+    case 40:
+        showStateBarInfo("传输中..");
+        break;
+    case 60:
+        showStateBarInfo("传输中...");
+        break;
+    default:
+//        showStateBarInfo("传输中......");
+        break;
+    }
 }
 
 /************************************************/

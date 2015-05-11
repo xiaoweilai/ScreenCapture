@@ -77,7 +77,7 @@ public:
     void retranslateUi(QMainWindow *ScreenCap)
     {
         ScreenCap->setWindowTitle(QApplication::translate("ScreenCap", "\345\275\225\345\261\217\344\274\240\350\276\223", 0, QApplication::UnicodeUTF8));
-        lineEditIp->setText(QApplication::translate("ScreenCap", "192.168.1.105", 0, QApplication::UnicodeUTF8));
+        lineEditIp->setText(QApplication::translate("ScreenCap", "192.168.1.102", 0, QApplication::UnicodeUTF8));
         pushButtonStart->setText(QString());
         label->setText(QString());
     } // retranslateUi

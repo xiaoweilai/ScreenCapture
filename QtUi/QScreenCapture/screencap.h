@@ -93,6 +93,7 @@ private slots:
     void StopActionSets();
 private:
     void showTextTransfering();
+    void showTextTransferingNo(quint64 num);
     void showTextTransferOver();
     void showStateBarInfo(const char *pstr);
     void showAppVerion(void);
