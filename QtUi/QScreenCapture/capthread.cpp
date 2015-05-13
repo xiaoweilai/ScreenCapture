@@ -560,7 +560,7 @@ void CapThread::run()
                             fwrite(pkt->data, 1, pkt->size, f);
                             fflush(f);
 #endif
-                            av_free_packet(pkt);
+//                            av_free_packet(pkt);
                         }
                         SDL_UnlockYUVOverlay(bmp);
                         SDL_DisplayYUVOverlay(bmp, &rect);

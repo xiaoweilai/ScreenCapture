@@ -16,6 +16,6 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-const char *ScreenCapVersion = "1.6.1";
+const char *ScreenCapVersion = "1.6.2";
 
 #endif // VERSION_H
