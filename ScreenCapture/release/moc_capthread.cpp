@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'capthread.h'
 **
-** Created: Tue Mar 17 00:11:53 2015
+** Created: Thu May 14 22:51:33 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,21 +23,25 @@ static const uint qt_meta_data_CapThread[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       1,   14, // methods
+       2,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       0,       // signalCount
+       1,       // signalCount
+
+ // signals: signature, parameters, type, tag, flags
+      11,   10,   10,   10, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-      11,   10,   10,   10, 0x0a,
+      33,   10,   10,   10, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_CapThread[] = {
-    "CapThread\0\0capFrame()\0"
+    "CapThread\0\0emitMsgBoxSignal(int)\0"
+    "capFrame()\0"
 };
 
 void CapThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -46,11 +50,11 @@ void CapThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         Q_ASSERT(staticMetaObject.cast(_o));
         CapThread *_t = static_cast<CapThread *>(_o);
         switch (_id) {
-        case 0: _t->capFrame(); break;
+        case 0: _t->emitMsgBoxSignal((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 1: _t->capFrame(); break;
         default: ;
         }
     }
-    Q_UNUSED(_a);
 }
 
 const QMetaObjectExtraData CapThread::staticMetaObjectExtraData = {
@@ -85,10 +89,17 @@ int CapThread::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 2)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 2;
     }
     return _id;
+}
+
+// SIGNAL 0
+void CapThread::emitMsgBoxSignal(int _t1)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 0, _a);
 }
 QT_END_MOC_NAMESPACE

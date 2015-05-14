@@ -8,32 +8,28 @@ extern "C"
 #include <libavutil/imgutils.h>
 #include <libavutil/mathematics.h>
 #include <libavutil/samplefmt.h>
+#include <libavformat/avformat.h>
 }
+
+#include <QtCore/QCoreApplication>
+#include <QApplication>
+#include <stdio.h>
+#include <math.h>
+#include <QDebug>
+#include "capthread.h"
 
 #define INBUF_SIZE 4096
 #define AUDIO_INBUF_SIZE 20480
 #define AUDIO_REFILL_THRESH 4096
-
-
 //#define ORGSRC
 #define DESK_WIDTH  (1366)
 #define DESK_HEIGHT (768)
-
-#include "capthread.h"
-#include <stdio.h>
-#include <math.h>
-
-
-#include <QtCore/QCoreApplication>
-#include <QApplication>
-
-#include "capthread.h"
 
 
 static int decode_write_frame(AVCodecContext *avctx, AVFrame *frame, int *frame_count, AVPacket *pkt, int last)
 {
     int len, got_frame;
-    char buf[1024];
+
     len = avcodec_decode_video2(avctx, frame, &got_frame, pkt);
     if (len < 0) {
         printf("Error while decoding frame %d\n", *frame_count);
@@ -89,21 +85,9 @@ static int decode_write_frame(AVCodecContext *avctx, AVFrame *frame, int *frame_
     return 0;
 }
 
-
-int main(int argc, char *argv[])
+void decodeUt()
 {
-    QApplication a(argc, argv);
-#ifdef ORGSRC
-    int w = QString(argv[1]).toInt();
-    int h = QString(argv[2]).toInt();
-#else
-    int w = DESK_WIDTH;
-    int h = DESK_HEIGHT;
-#endif
-    printf("w:%d h:%d\n", w, h);
-    CapThread* th = new CapThread(w, h);
-    th->start();
-/*
+
     avcodec_register_all();
     AVCodec *codec;
     AVCodecContext *c= NULL;
@@ -146,6 +130,7 @@ int main(int argc, char *argv[])
     }
     frame_count = 0;
     for (;;) {
+        fprintf(stdout, "parse video frame\n");
         avpkt.size = fread(inbuf, 1, INBUF_SIZE, f);
         if (avpkt.size == 0)
             break;
@@ -154,6 +139,96 @@ int main(int argc, char *argv[])
             if (decode_write_frame(c, frame, &frame_count, &avpkt, 0) < 0)
                 exit(1);
     }
-*/
+
+}
+
+
+
+void getVideoInfo()
+{
+    //    1)如何获取媒体文件的信息(Parser):
+    // 参考V3代码: interface IFileDecoder, media/impl/filedecoderimpl.cpp
+    av_register_all();
+    AVFormatContext * pFormatCtx = NULL;
+    int err = 0;
+    const char *fileName = "test.mpg";
+    err = avformat_open_input(&pFormatCtx, fileName, NULL,  NULL);
+    if(err != 0)
+    {
+        // break ;
+    }
+    err = avformat_find_stream_info(pFormatCtx,NULL);
+    if(err < 0)
+    {
+        // break ;
+    }
+    qDebug() << "pFormatCtx->nb_streams:" << pFormatCtx->nb_streams;
+    for(uint32_t i = 0; i < pFormatCtx->nb_streams; i ++)
+    {
+        // stream 结构数据
+        AVStream *pStream = pFormatCtx->streams[i];
+        // 帧率信息
+        AVRational frameRate = pStream->r_frame_rate;
+        // 时间单位比率
+        AVRational timeBase = pStream->time_base;
+        // stream duration
+        int64_t duration = pStream->duration;
+
+        // 获取Codec数据结构
+        AVCodecContext *pCodecCtx = pStream->codec;
+        AVMediaType codecType = pCodecCtx->codec_type;
+
+        AVCodecID codecId = pCodecCtx->codec_id;
+
+        qDebug("codecId:%d\n", codecId);
+        qDebug("AV_CODEC_ID_H264:%d\n", AV_CODEC_ID_H264);
+
+
+
+
+        if(codecType == AVMEDIA_TYPE_VIDEO)
+        {
+            // 获取Video基本信息
+            int width = pCodecCtx->width;
+            int height = pCodecCtx->height;
+            PixelFormat pixelFormat = pCodecCtx->pix_fmt;
+        }
+        else if(codecType == AVMEDIA_TYPE_AUDIO)
+        {
+            // 获取Audio基本信息
+            int channels = pCodecCtx->channels;
+            int sample_rate = pCodecCtx->sample_rate;
+            AVSampleFormat sampleFmt = pCodecCtx->sample_fmt;
+        }
+    }
+    // 释放
+    if(pFormatCtx != NULL)
+    {
+        avformat_close_input(&pFormatCtx);
+        pFormatCtx = NULL;
+    }
+
+    qDebug("App End\n");
+
+}
+
+
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+    int w = DESK_WIDTH;
+    int h = DESK_HEIGHT;
+
+    printf("w:%d h:%d\n", w, h);
+    //    CapThread* th = new CapThread(w, h);
+    //    th->start();
+
+//    decodeUt();
+
+
+    getVideoInfo();
+
+
     return a.exec();
 }

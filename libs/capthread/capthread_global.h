@@ -1,0 +1,12 @@
+#ifndef CAPTHREAD_GLOBAL_H
+#define CAPTHREAD_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(CAPTHREAD_LIBRARY)
+#  define CAPTHREADSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define CAPTHREADSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // CAPTHREAD_GLOBAL_H

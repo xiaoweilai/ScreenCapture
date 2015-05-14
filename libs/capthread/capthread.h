@@ -7,49 +7,42 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QTimer>
+
 #include <stdio.h>
-
-
-#define INBUF_SIZE 4096
-#define AUDIO_INBUF_SIZE 20480
-#define AUDIO_REFILL_THRESH 4096
 
 struct AVFrame;
 struct AVPacket;
 struct AVCodec;
 struct AVCodecContext;
+#include "capthread_global.h"
 
-
-class CapThread : public QThread
+class CAPTHREADSHARED_EXPORT Capthread : public QThread
 {
     Q_OBJECT
+public:
+    Capthread();
 
-public:
-    explicit CapThread(int width, int height, QObject *parent = 0);
-private:
-    void run();
-signals:
-    void emitMsgBoxSignal(int);
-    
-public slots:
-    void capFrame();
-    //public var
-public:
-    enum
-    {
-        THREADRUNNING,
-        THREADSTOP
-    };
-    
 private:
     FILE* f;
     QTimer* timer;
+
     AVFrame *frame;
     AVPacket* pkt;
     AVCodec *codec;
     AVCodecContext *c;
     int i, ret, got_output;
+
     int resize_width, resize_height;
+
+public:
+    explicit CapThread(int width, int height, QObject *parent = 0);
+
+private:
+    void run();
+signals:
+
+public slots:
+    void capFrame();
 };
 
 #endif // CAPTHREAD_H
