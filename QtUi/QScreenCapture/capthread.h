@@ -92,7 +92,7 @@ extern "C"
 #define OUTPUT_YUV420P 0
 //'1' Use Dshow
 //'0' Use GDIgrab
-#define USE_DSHOW 0
+#define USE_DSHOW 1  // "video=screen-capture-recorder"
 //Refresh Event
 #define SFM_REFRESH_EVENT  (SDL_USEREVENT + 1)
 //#define ORGSRC

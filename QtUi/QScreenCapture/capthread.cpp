@@ -252,7 +252,7 @@ CapThread::CapThread(int width, int height,QObject *parent)
     if(avformat_open_input(&pFormatCtx,"video=screen-capture-recorder",ifmt,NULL)!=0){
         qDebug("Couldn't open input stream.\n");
         LogWriteFile("alloc context failed\n");
-        return -1;
+        exit(1);
     }
 #else
     //Use gdigrab
@@ -512,7 +512,8 @@ void CapThread::run()
             qDebug("count:%d\n",execcount++);
             LogWriteFile(QString::fromLocal8Bit("count:%1\n").arg(execcount++));
 #endif
-
+            qDebug("pFormatCtx addr:%p\n",pFormatCtx);
+            qDebug("pkt        addr:%p\n",pkt);
             if(av_read_frame(pFormatCtx, pkt)>=0){
                 if(pkt->stream_index==videoindex){
 #ifdef DEBUG
@@ -567,7 +568,7 @@ void CapThread::run()
 
                     }
                 }
-                av_free_packet(pkt);
+//                av_free_packet(pkt);
             }else{
                 qDebug() << "Exception condition!";
 //                qDebug() << "Exit ThreadExit ThreadExit Thread!";
@@ -598,6 +599,7 @@ void CapThread::run()
     LogWriteFile("release resource,free capthread resource and quit!\n");
     //SDL_KillThread(video_tid);
     thread_exit=1;
+    av_free_packet(pkt);
     sws_freeContext(img_convert_ctx);
     SDL_Quit();
     av_free(pEframe);
@@ -689,6 +691,7 @@ int CapThread::SendPkgData(AVPacket *pkt)
             p_tcpClient->write(outBlock);
         }
 #endif
+        av_free_packet(pkt);
     }
 }
 

@@ -124,7 +124,7 @@ void ScreenCap::LogInitLog()
 #ifdef SC_DATASTREAM_LOG  //将发送数据的内容进行保存，以二进制形式
     datafilename = date.currentDate().toString("scDatyyyy-MM-dd");
     datafilename += time.currentTime().toString("_HH-mm-ss");
-    datafilename +=".bin";
+    datafilename +=".mpg";
     pdataFile = new QFile(datafilename);
     if(!pdataFile)
     {
@@ -398,7 +398,7 @@ void ScreenCap::displayNetErr(QAbstractSocket::SocketError socketError)
 /*version:1.0                                    */
 /*时 间:2015.4.25                                 */
 /*************************************************/
-qint64 ScreenCap::writeNetData(const QByteArray &iData)
+qint64 ScreenCap::writeNetData(const QByteArray &iData,WriteDataFlag flag)
 {
     qint64 len = p_tcpClient->write(iData);
     //    bool res = p_tcpClient->waitForBytesWritten();
@@ -416,7 +416,10 @@ qint64 ScreenCap::writeNetData(const QByteArray &iData)
 #endif
 
 #ifdef SC_DATASTREAM_LOG
-    LogWriteDataFile(iData);
+    if(flag == WRITE_BODY)   /* 只记录body */
+    {
+        LogWriteDataFile(iData);
+    }
 #endif
 
     if(len != iData.size())
@@ -475,7 +478,7 @@ void ScreenCap::MergeSendMessage()
     LogWriteFile(TotalBytesInfo);
 
     //将头发送出去，并计算剩余的数据长度，即数据内容长度(n)
-    qint64 len = writeNetData(outBlock);
+    qint64 len = writeNetData(outBlock, WRITE_HEAD);
 
 
     if(len != outBlock.size())
@@ -491,7 +494,7 @@ void ScreenCap::MergeSendMessage()
 
     outBlkData = pCapThread->arrayNetData.at(0);
 
-    writeNetData(outBlkData);
+    writeNetData(outBlkData, WRITE_BODY);
 
     qDebug() << "-->outBlkData size :" << outBlkData.size();
 

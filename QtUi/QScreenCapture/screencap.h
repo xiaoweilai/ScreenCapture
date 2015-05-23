@@ -58,6 +58,13 @@ enum{
     SEND_UNKNOWN
 };
 
+enum WriteDataFlag{
+    WRITE_HEAD,
+    WRITE_BODY,
+    WRITE_ALL,
+    WRITE_INVLAID
+};
+
 //是否保存LOG信息到文件
 #define SC_LOG
 //网络发送数据的内容
@@ -109,7 +116,7 @@ private:
     void StopCapScreen();
 
     /*************[网络传输]**********************/
-    qint64 writeNetData(const QByteArray &iData);
+    qint64 writeNetData(const QByteArray &iData, WriteDataFlag flag);
 private:
     Ui::ScreenCap *ui;
     static int isStarted;
