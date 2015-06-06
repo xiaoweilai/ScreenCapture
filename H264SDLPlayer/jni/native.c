@@ -75,7 +75,7 @@ static void fill_bitmap(AndroidBitmapInfo*  info, void *pixels, AVFrame *pFrame)
     }
 }
 
-void Java_com_churnlabs_ffmpegsample_MainActivity_openFile(JNIEnv * env, jobject this)
+void Java_com_h264sdlplayer_H264Jni_openFile(JNIEnv * env, jobject this)
 {
     int ret;
     int err;
@@ -137,7 +137,7 @@ void Java_com_churnlabs_ffmpegsample_MainActivity_openFile(JNIEnv * env, jobject
                             pCodecCtx->width, pCodecCtx->height);
 }
 
-void Java_com_churnlabs_ffmpegsample_MainActivity_drawFrame(JNIEnv * env, jobject this, jstring bitmap)
+void Java_com_h264sdlplayer_H264Jni_drawFrame(JNIEnv * env, jobject this, jstring bitmap)
 {
     AndroidBitmapInfo  info;
     void*              pixels;
@@ -200,13 +200,13 @@ void Java_com_churnlabs_ffmpegsample_MainActivity_drawFrame(JNIEnv * env, jobjec
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
-void Java_com_churnlabs_ffmpegsample_MainActivity_initScreen(JNIEnv * env, jobject this, jint width, jint height)
+void Java_com_h264sdlplayer_H264Jni_initScreen(JNIEnv * env, jobject this, jint width, jint height)
 {
 	LOGI("Screen->width-height:%d-%d\n", width,height);
 //	AVPacket *pkt=(AVPacket *)av_malloc(sizeof(AVPacket);
 }
 
-int  Java_com_churnlabs_ffmpegsample_MainActivity_ProcPacketsDisplay(JNIEnv * env, jobject this,  jbyteArray jarr, jint len)
+int  Java_com_h264sdlplayer_H264Jni_ProcPacketsDisplay(JNIEnv * env, jobject this,  jbyteArray jarr, jint len)
 {
 	LOGI("array len:%d\n", len);
 	typedef unsigned int BYTE;
@@ -243,7 +243,7 @@ int seek_frame(int tsms)
     return 1;
 }
 
-void Java_com_churnlabs_ffmpegsample_MainActivity_drawFrameAt(JNIEnv * env, jobject this, jstring bitmap, jint secs)
+void Java_com_h264sdlplayer_H264Jni_drawFrameAt(JNIEnv * env, jobject this, jstring bitmap, jint secs)
 {
     AndroidBitmapInfo  info;
     void*              pixels;

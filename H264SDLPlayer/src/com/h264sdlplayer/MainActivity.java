@@ -63,6 +63,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 	private Bitmap mBitmap;
 	private int mSecs = 0;
 	private int ulCount = 0;
+	private H264Jni jniInterface;
 	
 	@SuppressLint("NewApi")
 	@Override
@@ -96,14 +97,15 @@ public class MainActivity extends Activity implements View.OnClickListener{
 //		h264 = new H264Androidffmpeg();
 //		decoder =  h264.initDecoder(screenWidth,screenHeight);
 		// *****************************sdl add **********************************
+		jniInterface = new H264Jni();
         mBitmap = Bitmap.createBitmap(720, 480, Bitmap.Config.ARGB_8888);
-//        H264Jni.openFile();
+        jniInterface.openFile();
         
         Button btn = (Button)findViewById(R.id.frame_adv);
         btn.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				H264Jni.initScreen(720,480);
-				int getStatus = H264Jni.ProcPacketsDisplay(initByte(),100);
+				jniInterface.initScreen(720,480);
+				int getStatus = jniInterface.ProcPacketsDisplay(initByte(),100);
 //				drawFrame(mBitmap);
 //				saveBitmap(mBitmap);
 				Toast.makeText(mContext, getStatus+"", Toast.LENGTH_LONG).show();
@@ -118,8 +120,8 @@ public class MainActivity extends Activity implements View.OnClickListener{
 				for(ulCount = 0; ulCount<1;ulCount++)
 				{
 					mSecs += 5;
-					H264Jni.drawFrameAt(mBitmap, mSecs);
-					H264Jni.drawFrame(mBitmap);
+					jniInterface.drawFrameAt(mBitmap, mSecs);
+					jniInterface.drawFrame(mBitmap);
 //					ImageView i = (ImageView)findViewById(R.id.frame);
 //					i.setImageBitmap(mBitmap);			
 				}
@@ -130,8 +132,8 @@ public class MainActivity extends Activity implements View.OnClickListener{
         btn_back.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				mSecs -= 5;
-				H264Jni.drawFrameAt(mBitmap, mSecs);
-				H264Jni.drawFrame(mBitmap);
+				jniInterface.drawFrameAt(mBitmap, mSecs);
+				jniInterface.drawFrame(mBitmap);
 //				ImageView i = (ImageView)findViewById(R.id.frame);
 //				i.setImageBitmap(mBitmap);
 			}
