@@ -1,0 +1,51 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/rel_main"
+    tools:context=".MainActivity" >
+
+      <ImageView 
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+	    android:scaleType="fitXY"
+	    android:id="@+id/img_lcd"
+	    />
+	<!--<ImageView 
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:id="@+id/img_lcd"
+	    /> -->
+	 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/ip_address"
+        android:textSize="35sp"
+/>
+        <Button
+        android:id="@+id/frame_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:text="back 5" >
+    </Button>
+    
+
+    <Button
+        android:id="@+id/frame_fwd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/frame_back"
+        android:text="forward 5" >
+    </Button>
+    
+    <Button
+        android:id="@+id/frame_adv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/frame_fwd"
+        android:text="Frame" >
+    </Button>
+    
+</RelativeLayout>
