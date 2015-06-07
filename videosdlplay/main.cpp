@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
     // Make a screen to put our video
 #ifndef __DARWIN__
-    screen = SDL_SetVideoMode(pCodecCtx->width, pCodecCtx->height, 0, SDL_HWSURFACE | SDL_DOUBLEBUF );
+    screen = SDL_SetVideoMode(pCodecCtx->width/2, pCodecCtx->height/2, 0, SDL_HWSURFACE | SDL_DOUBLEBUF );
 #else
     screen = SDL_SetVideoMode(pCodecCtx->width, pCodecCtx->height, 24, 0);
 #endif
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
                         to the codec pixel format if needed */
                     img_convert_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height,
                                                      pCodecCtx->pix_fmt,
-                                                     pCodecCtx->width, pCodecCtx->height,
+                                                     pCodecCtx->width/2, pCodecCtx->height/2,
                                                      PIX_FMT_YUV420P,
                                                      sws_flags, NULL, NULL, NULL);
                     if (img_convert_ctx == NULL) {
