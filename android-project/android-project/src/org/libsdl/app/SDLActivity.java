@@ -96,6 +96,7 @@ public class SDLActivity extends Activity {
 	private long packageHead = 0x00000000FFFEFFFEL;
 	byte bytes = 0x40;
 	private static String curStartTimeFileName;
+	public static int[] screenSize;
     
 
     /**
@@ -220,7 +221,7 @@ public class SDLActivity extends Activity {
         mContext = this;
 		mRes = mContext.getResources();
 		curStartTimeFileName = PublicFunction.getStringDate();
-        
+    	screenSize = PublicFunction.getScreenWithAndHeight(mContext);
 
 		setIpAddress();
 		try{
@@ -445,12 +446,8 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 	            		mCopyByteMessage = mGetByteMessage.clone();
 					}
 	            	//********************需要传的字节数组。****************************
-//	            	int getStatus = H264Jni.ProcPacketsDisplay(mCopyByteMessage,mCopyByteMessage.length);
-////	            	int resout = h264.dalDecoder(mCopyByteMessage, mCopyByteMessage.length, mPixel);
-//					mImgBitmapShow = PublicFunction.bytesToBimap(mPixel);
-//					if(mImgBitmapShow != null){
-//						mImgLcd.setImageBitmap(mImgBitmapShow);
-//					}
+	            	ProcPacketsDisplay(mCopyByteMessage, mCopyByteMessage.length);
+	            	
 				} else if(msg.what == 2){
 					setIpAddress();
 				} else if(msg.what == 3){
@@ -1230,10 +1227,10 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 class SDLMain implements Runnable {
     @Override
     public void run() {
-        // Runs SDL_main()
+		// Runs SDL_main()
 //        SDLActivity.nativeInit(SDLActivity.mSingleton.getArguments());
 //        SDLActivity.ProcPacketsDisplay();
-    	SDLActivity.initScreen(null, 100, 100);
+    	SDLActivity.initScreen(null, SDLActivity.screenSize[0], SDLActivity.screenSize[1]);
 
         //Log.v("SDL", "SDL thread terminated");
     }
