@@ -4,6 +4,7 @@
 #include <android/log.h>
 #include <android/bitmap.h>
 
+#undef SDL_main
 #include "libavcodec/avcodec.h"
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
@@ -43,6 +44,33 @@
 #include "SDL.h"  
 
 #if 1
+/*
+ * init screen pixel with width and height
+ *
+ *
+ *
+*/
+void Java_org_libsdl_app_SDLActivity_initScreen(JNIEnv* env, jclass cls, jobject array,
+												jint screenwidth, jint screenheight)
+{
+	LOGI("init screen\n");
+	LOGI("screenwidth:%d", screenwidth);
+	LOGI("screenheight:%d", screenheight);
+
+
+}
+
+/*
+ *
+ * process packets  from client
+ *
+ */
+int Java_org_libsdl_app_SDLActivity_ProcPacketsDisplay(JNIEnv * env, jobject this,  jbyteArray pktarray,jint pktlen)
+{
+	return 0;
+}
+
+
 /*
  * test change it
  *

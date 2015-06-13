@@ -700,6 +700,10 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
     }
 
     // C functions we call
+    // add two self define function
+    public static native void initScreen(Object arguments,int screenwidth, int screenheight);
+    public static native int ProcPacketsDisplay(byte[] pktarray,int pktlen);
+    // system define
     public static native int nativeInit(Object arguments);
     public static native void nativeLowMemory();
     public static native void nativeQuit();
@@ -1227,7 +1231,9 @@ class SDLMain implements Runnable {
     @Override
     public void run() {
         // Runs SDL_main()
-        SDLActivity.nativeInit(SDLActivity.mSingleton.getArguments());
+//        SDLActivity.nativeInit(SDLActivity.mSingleton.getArguments());
+//        SDLActivity.ProcPacketsDisplay();
+    	SDLActivity.initScreen(null, 100, 100);
 
         //Log.v("SDL", "SDL thread terminated");
     }
