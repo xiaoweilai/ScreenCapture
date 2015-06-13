@@ -65,8 +65,8 @@ public class VideoDisplayView extends SurfaceView implements SurfaceHolder.Callb
 	private SurfaceHolder _surfaceHolder;
 	private static final String TAG = "VideoDisplayView";
 
-	public int previewHeight = 480;
-	public int previewWidth = 800;
+	public int previewHeight = PublicFunction.getScreenHeight();
+	public int previewWidth = PublicFunction.getScreenWidth();
 	
 	private boolean isRgbFormat = false;
 

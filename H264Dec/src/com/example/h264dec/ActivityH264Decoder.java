@@ -37,8 +37,8 @@ public class ActivityH264Decoder extends Activity implements OnClickListener  {
         super.onCreate(savedInstanceState);
 
 		_fileName = getIntent().getStringExtra("h264.fileName");
-		int width = 480;
-    	int height = 800;
+		int width = PublicFunction.getScreenWidth();
+    	int height = PublicFunction.getScreenHeight();
     	String[] parts = _fileName.split("\\.");
     	for (int i = 0; i < parts.length; i++) {
     		if (parts[i].contains("x")) {
@@ -139,14 +139,14 @@ public class ActivityH264Decoder extends Activity implements OnClickListener  {
 	private class MyNDKDecodeThread extends Thread {
 		public void run() {
 			Message msg = new Message();
-			msg.what = 1;
-			hRefresh.sendMessage(msg);
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+//			msg.what = 1;
+//			hRefresh.sendMessage(msg);
+//			try {
+//				Thread.sleep(3000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
         	String inputPath = MainActivity.getPathInStorageDirectory(_fileName);
         	String outputPath = MainActivity.getPathInStorageDirectory(outputFile());
 			

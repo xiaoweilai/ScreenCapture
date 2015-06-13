@@ -15,6 +15,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.hardware.Camera;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -46,6 +47,7 @@ public class MainActivity extends Activity implements OnItemClickListener {
 		super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+        setScreenWidthAndHeight();
         _textViewPrompt = (TextView)findViewById(R.id.textViewMenuPrompt);
         _listView = (ListView)findViewById(R.id.listViewMenu);
         
@@ -93,6 +95,18 @@ public class MainActivity extends Activity implements OnItemClickListener {
             	} else {
     	        	_textViewPrompt.setText("No files in storage directory.");
             	}
+	}
+	
+	private void setScreenWidthAndHeight(){
+		DisplayMetrics  dm = new DisplayMetrics();  
+	      //取得窗口属性  
+	      getWindowManager().getDefaultDisplay().getMetrics(dm);  
+	      //窗口的宽度  
+	      int screenWidth = dm.widthPixels;  
+	      //窗口高度  
+	      int screenHeight = dm.heightPixels;  
+	      PublicFunction.setScreenHeight(screenHeight);
+	      PublicFunction.setScreenWidth(screenWidth);
 	}
 	private static String storagePath = Environment.getExternalStorageDirectory().getPath() +  "/h264";
 	public static String getPathInStorageDirectory(String path) {
@@ -152,10 +166,10 @@ public class MainActivity extends Activity implements OnItemClickListener {
         }
     }
 	public void onItemClick(AdapterView<?> arg0, View view, int arg2, long arg3) {
-
+		
 			Intent resultIntent = null;
 			resultIntent = new Intent(this, ActivityYuvOrRgbViewer.class);
-
+//			resultIntent = new Intent(this, ActivityH264Decoder.class);
 
 			TextView tView = (TextView)view;
 			String fileName = tView.getText().toString();

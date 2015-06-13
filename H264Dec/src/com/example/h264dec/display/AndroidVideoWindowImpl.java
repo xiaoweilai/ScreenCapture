@@ -58,7 +58,7 @@ public class AndroidVideoWindowImpl {
 				Log.i("GLES","Video display surface is being changed.");
 				if (!useGLrendering) {
 					synchronized(AndroidVideoWindowImpl.this){
-						mBitmap=Bitmap.createBitmap(width,height,Config.ARGB_8888);
+						mBitmap=Bitmap.createBitmap(width,height,Config.RGB_565);
 						mSurface=holder.getSurface();
 					}
 				}
