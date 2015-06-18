@@ -291,6 +291,25 @@ int Java_org_libsdl_app_SDLActivity_ProcPacketsDisplay(JNIEnv * env, jobject thi
 {
 	LOGI("pkt len:%d\n", pktlen);
 	typedef unsigned int BYTE;
+
+//	获得类：
+//	cls 可认为是类的句柄
+//	"com/ldq/Student" 就是类文件，注意不能用 "com.ldq.Student"
+//	jclass cls  = env->FindClass("org/libsdl/app/SDLActivity");
+//	jclass cls  =(*env)->FindClass(env, "java/lang/String");
+	//找到类文件
+	jclass  objectClass = (*env)->FindClass(env, "org.libsdl.app.SDLActivity");
+	//或者 obj 参数表示要你想要得到类型的类对象。
+//	jclass class_Field = (*env)->GetObjectClass(env,obj);
+
+	//得到构造函数
+	jmethodID mid_date = (*env)->GetMethodID(env,objectClass, "<init>", "()V");
+	//生成对象
+//	jobject o = (*env)->NewObject(env,jclass,jmethod);
+	//jclass类 构造方法 后面的就是构造方法的参数  可以没有
+
+
+
 	//获取jbyteArray
 	jbyte   *   arr   =   (*env)-> GetByteArrayElements(env, pktarray,   NULL);
 	AVPacket * avpkt=(AVPacket *)arr;
