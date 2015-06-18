@@ -1231,7 +1231,10 @@ class SDLMain implements Runnable {
 //        SDLActivity.nativeInit(SDLActivity.mSingleton.getArguments());
 //        SDLActivity.ProcPacketsDisplay();
     	SDLActivity.initScreen(null, SDLActivity.screenSize[0], SDLActivity.screenSize[1]);
-
+    	for(;;)
+    	{
+    		
+    	}
         //Log.v("SDL", "SDL thread terminated");
     }
 }
