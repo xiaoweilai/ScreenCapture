@@ -97,6 +97,7 @@ public class SDLActivity extends Activity {
 	byte bytes = 0x40;
 	private static String curStartTimeFileName;
 	public static int[] screenSize;
+	private static long curPackageCount = 0;
     
 
     /**
@@ -224,6 +225,7 @@ public class SDLActivity extends Activity {
     	screenSize = PublicFunction.getScreenWithAndHeight(mContext);
 
 		setIpAddress();
+//		PublicFunction.writeFile(mContext, getLogFileName(), "screenSize = "+ screenSize[0] + "\n" + "screenSize = "+ screenSize[1]);
 		try{
 			SocketServer();
 		}catch(Throwable e){
@@ -280,6 +282,7 @@ public class SDLActivity extends Activity {
 		mByteLong = 0;
 		mCurImageSize = 0;
 		mCurImageNameLength = 0;
+		curPackageCount = 0;
 		mHandler.sendEmptyMessage(5);
 		mReceiveSuccessedFlag = false;
 		if(mIpAddress != null){
@@ -376,7 +379,9 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 	            	if(readPackageHead != 8 || readPackageContent != packageHead){
 	            		return;
 	            	}
+	            	curPackageCount++;
 	            	mCurImageSize = (int)tempTotalSize - 24;
+	            	
 	            	mGetByteMessage = new byte[mCurImageSize];
 	            	mReceiveSuccessedBeforeFourByteFlag = true;
 	            }
@@ -444,9 +449,13 @@ public void receiveMessage(DataInputStream input, Socket s, DataOutputStream out
 	            	synchronized (mGetByteMessage) {
 	            		mCopyByteMessage = new byte[mGetByteMessage.length];
 	            		mCopyByteMessage = mGetByteMessage.clone();
+	            		PublicFunction.writeFile(mContext, getLogFileName(), "line = "+ curPackageCount + "package len = "+ mCopyByteMessage.length + "\n");
+	            		ProcPacketsDisplay(mCopyByteMessage, mCopyByteMessage.length);
 					}
+	            	
+//	            	PublicFunction.writeFile(mContext, getLogFileName(), content);
 	            	//********************需要传的字节数组。****************************
-	            	ProcPacketsDisplay(mCopyByteMessage, mCopyByteMessage.length);
+	            	
 	            	
 				} else if(msg.what == 2){
 					setIpAddress();
