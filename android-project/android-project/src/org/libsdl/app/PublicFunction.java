@@ -95,7 +95,7 @@ private static int curImageIndex = 0;
 		return wh;
 	}
 	
-	public static void writeFile(Context mContext,String path,String content) {
+	public synchronized static void writeFile(Context mContext,String path,String content) {
 		String firstpath = "bytesave";
 		
 		if(GetSD.getSDPath()!=null){
